@@ -588,30 +588,26 @@ async def handle_check_cooldown(request):
     except Exception as e:
         return web.json_response({'code': 500, 'msg': f'获取冷却状态失败: {str(e)}'}, status=500)
 
-shop_data_cache = None
-shop_data_cache_time = 0
-SHOP_DATA_CACHE_TTL = 60
-
 async def handle_shopdata(request):
-    global shop_data_cache, shop_data_cache_time
     try:
-        now = time.time()
-        if shop_data_cache is not None and (now - shop_data_cache_time) < SHOP_DATA_CACHE_TTL:
-            return web.json_response(shop_data_cache)
+        token = request.query.get('token')
+        sid = request.query.get('sid')
         
-        shop_data_path = Path(__file__).parent / '1.txt'
-        if not shop_data_path.exists():
-            return web.json_response({'code': 404, 'msg': '商品数据文件不存在'}, status=404)
-        with open(shop_data_path, 'r', encoding='utf-8') as f:
-            content = f.read()
-        data = json.loads(content)
-        shop_data_cache = data
-        shop_data_cache_time = now
-        return web.json_response(data)
-    except json.JSONDecodeError:
-        return web.json_response({'code': 500, 'msg': '商品数据解析失败'}, status=500)
+        if not token or not sid:
+            return web.json_response({'code': 400, 'msg': '缺少token或sid参数'}, status=400)
+        
+        async with aiohttp.ClientSession() as session:
+            async with session.get(f"{API_BASE}/?do=profile", headers={'Authorization': token}, params={'sid': sid}) as resp:
+                profile_data = await safe_json_response(resp)
+        
+        if profile_data.get('code') != 200:
+            return web.json_response({'code': profile_data.get('code', 500), 'msg': profile_data.get('msg', '获取商品数据失败')})
+        
+        profile_data['data']['shopdata'] = profile_data.get('data', {}).get('shopdata', {})
+        
+        return web.json_response({'code': 200, 'data': profile_data.get('data', {}), 'msg': '获取成功'})
     except Exception as e:
-        return web.json_response({'code': 500, 'msg': f'读取失败: {str(e)}'}, status=500)
+        return web.json_response({'code': 500, 'msg': f'获取商品数据失败: {str(e)}'}, status=500)
 
 async def handle_role(request):
     try:
@@ -877,14 +873,15 @@ async def handle_redeem_accumulate(request):
         
         total_pay = profile_data.get('data', {}).get('paydata', {}).get('total', 0)
         
-        shop_data_path = Path(__file__).parent / '1.txt'
-        if not shop_data_path.exists():
-            return web.json_response({'code': 404, 'msg': '商品数据不存在'}, status=404)
+        shop_data_url = f"{API_BASE}/?do=profile"
+        async with aiohttp.ClientSession() as session:
+            async with session.get(shop_data_url, headers={'Authorization': token}, params={'sid': sid}) as resp:
+                shop_response = await safe_json_response(resp)
         
-        with open(shop_data_path, 'r', encoding='utf-8') as f:
-            shop_content = f.read()
-        shop_json = json.loads(shop_content)
-        packs_data = shop_json.get('data', {}).get('packsdata', {})
+        if shop_response.get('code') != 200:
+            return web.json_response({'code': 500, 'msg': '获取礼包信息失败'}, status=500)
+        
+        packs_data = shop_response.get('data', {}).get('shopdata', {})
         
         target_pack = None
         need_pay = 0
@@ -943,43 +940,45 @@ async def handle_accumulate_packs(request):
         token = request.query.get('token')
         sid = request.query.get('sid')
         
-        shop_data_path = Path(__file__).parent / '1.txt'
-        if not shop_data_path.exists():
-            return web.json_response({'code': 404, 'msg': '商品数据不存在'}, status=404)
+        if not token or not sid:
+            return web.json_response({'code': 400, 'msg': '缺少token或sid参数'}, status=400)
         
-        with open(shop_data_path, 'r', encoding='utf-8') as f:
-            shop_content = f.read()
-        shop_json = json.loads(shop_content)
-        packs_data = shop_json.get('data', {}).get('packsdata', {})
+        async with aiohttp.ClientSession() as session:
+            async with session.get(f"{API_BASE}/?do=profile", headers={'Authorization': token}, params={'sid': sid}) as resp:
+                profile_data = await safe_json_response(resp)
+        
+        if profile_data.get('code') != 200:
+            return web.json_response({'code': profile_data.get('code', 500), 'msg': profile_data.get('msg', '获取充值信息失败')})
+        
+        total_pay = profile_data.get('data', {}).get('paydata', {}).get('total', 0)
+        account = profile_data.get('data', {}).get('account', '')
+        
+        async with aiohttp.ClientSession() as session:
+            async with session.get(f"{API_BASE}/?do=profile", headers={'Authorization': token}, params={'sid': sid}) as resp:
+                shop_response = await safe_json_response(resp)
+        
+        if shop_response.get('code') != 200:
+            return web.json_response({'code': shop_response.get('code', 500), 'msg': shop_response.get('msg', '获取礼包信息失败')})
+        
+        packs_data = shop_response.get('data', {}).get('shopdata', {})
         
         accumulate_packs = []
         for key, value in packs_data.items():
             try:
                 pack = json.loads(value) if isinstance(value, str) else value
-                pack['id'] = int(pack.get('id', key))
-                accumulate_packs.append(pack)
+                if pack.get('type') == 2:
+                    pack['id'] = int(pack.get('id', key))
+                    accumulate_packs.append(pack)
             except:
                 pass
         
         accumulate_packs.sort(key=lambda x: x.get('needpay', 0))
         
-        user_total = 0
-        claimed_status = {}
-        
-        if token and sid:
-            async with aiohttp.ClientSession() as session:
-                async with session.get(f"{API_BASE}/?do=profile", headers={'Authorization': token}, params={'sid': sid}) as resp:
-                    profile_data = await safe_json_response(resp)
-            if profile_data.get('code') == 200:
-                user_total = profile_data.get('data', {}).get('paydata', {}).get('total', 0)
-                account = profile_data.get('data', {}).get('account', '')
-                claimed = load_claimed_packs()
-                for pack in accumulate_packs:
-                    claim_key = f"{account}_{sid}_{pack.get('id')}"
-                    claimed_status[str(pack.get('id'))] = claimed.get(claim_key, False)
+        claimed = load_claimed_packs()
         
         result_packs = []
         for pack in accumulate_packs:
+            claim_key = f"{account}_{sid}_{pack.get('id')}"
             result_packs.append({
                 'id': pack.get('id'),
                 'name': pack.get('name'),
@@ -990,15 +989,15 @@ async def handle_accumulate_packs(request):
                 'limit': pack.get('limit', 1),
                 'type': pack.get('type', 2),
                 'rewards': pack.get('rewards'),
-                'claimed': claimed_status.get(str(pack.get('id')), False) if token and sid else False,
-                'can_claim': user_total >= pack.get('needpay', 0) if token and sid else False
+                'claimed': claimed.get(claim_key, False),
+                'can_claim': total_pay >= pack.get('needpay', 0) and not claimed.get(claim_key, False)
             })
         
         return web.json_response({
             'code': 200,
             'data': {
                 'packs': result_packs,
-                'user_total': user_total
+                'user_total': total_pay
             },
             'msg': '获取成功'
         })

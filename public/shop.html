@@ -812,12 +812,9 @@
 
     async function fetchAccumulatePacks() {
         if (!currentSession?.token || !currentRoleSid) {
-            const res = await apiRequest('/api/accumulate-packs');
-            if (res.code === 200) {
-                accumulatePacks = res.data.packs || [];
-                userTotalPay = res.data.user_total || 0;
-                document.getElementById('totalRecharge').innerText = userTotalPay.toLocaleString();
-            }
+            accumulatePacks = [];
+            userTotalPay = 0;
+            document.getElementById('totalRecharge').innerText = '0';
             return;
         }
         
@@ -827,14 +824,12 @@
                 accumulatePacks = res.data.packs || [];
                 userTotalPay = res.data.user_total || 0;
                 document.getElementById('totalRecharge').innerText = userTotalPay.toLocaleString();
+            } else {
+                accumulatePacks = [];
             }
         } catch(e) {
             console.warn('获取累充礼包失败', e);
-            const res = await apiRequest('/api/accumulate-packs');
-            if (res.code === 200) {
-                accumulatePacks = res.data.packs || [];
-                userTotalPay = res.data.user_total || 0;
-            }
+            accumulatePacks = [];
         }
     }
 
@@ -904,23 +899,25 @@
                 return true;
             } else {
                 showToast('自动登录失败，请刷新重试', true);
-                await fetchAccumulatePacks();
                 return false;
             }
         } catch(e) {
             showToast('连接服务器失败', true);
-            await fetchAccumulatePacks();
             return false;
         }
     }
 
     async function loadShopData() {
+        if (!currentSession?.token || !currentRoleSid) {
+            shopItems = [];
+            renderItems(currentType);
+            return;
+        }
+        
         try {
-            const response = await fetch('/api/shopdata');
-            if (!response.ok) throw new Error('商品数据加载失败');
-            const data = await response.json();
-            if (data.code === 200 && data.data && data.data.shopdata) {
-                const raw = data.data.shopdata;
+            const response = await apiRequest(`/api/shopdata?token=${encodeURIComponent(currentSession.token)}&sid=${currentRoleSid}`);
+            if (response.code === 200 && response.data && response.data.shopdata) {
+                const raw = response.data.shopdata;
                 const items = [];
                 for (let key in raw) {
                     try {
@@ -934,13 +931,13 @@
                         items.push(parsed);
                     } catch(e) {}
                 }
-                shopItems = items.sort((a,b) => a.price - b.price);
+                shopItems = items.sort((a,b) => (a.price || 0) - (b.price || 0));
             } else {
-                showToast('商品数据格式错误', true);
+                shopItems = [];
             }
         } catch(e) {
-            showToast('无法加载商城数据', true);
-            console.error(e);
+            console.warn('加载商品数据失败', e);
+            shopItems = [];
         }
     }
 
@@ -1044,9 +1041,9 @@
                     </div>
                     <div>${limitText}</div>
                 </div>
-                <div class="card-desc">${escapeHtml(item.desc).replace(/\\r\\n/g, '<br>')}</div>
+                <div class="card-desc">${escapeHtml(item.desc || '').replace(/\\r\\n/g, '<br>')}</div>
                 <div class="card-footer">
-                    <div class="price"><small>¥</small> ${item.price}</div>
+                    <div class="price"><small>¥</small> ${item.price || 0}</div>
                     <button class="buy-btn ${isSoldOut ? 'disabled' : ''}" data-id="${item.id}" ${isSoldOut ? 'disabled' : ''}>${isSoldOut ? '已售罄' : '购买'}</button>
                 </div>
             `;
@@ -1265,7 +1262,7 @@
         }
         modalDesc.innerHTML = `
             <p><strong>💰 价格: ¥${item.price}</strong></p>
-            <p>📦 礼包内容:<br>${escapeHtml(item.desc).replace(/\\r\\n/g, '<br>')}</p>
+            <p>📦 礼包内容:<br>${escapeHtml(item.desc || '').replace(/\\r\\n/g, '<br>')}</p>
             <p>🛒 ${limitDetail}</p>
             <div class="form-group" style="margin-top: 15px;">
                 <label for="phoneInput">📱 手机号</label>
