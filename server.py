@@ -873,9 +873,8 @@ async def handle_redeem_accumulate(request):
         
         total_pay = profile_data.get('data', {}).get('paydata', {}).get('total', 0)
         
-        shop_data_url = f"{API_BASE}/?do=profile"
         async with aiohttp.ClientSession() as session:
-            async with session.get(shop_data_url, headers={'Authorization': token}, params={'sid': sid}) as resp:
+            async with session.get(f"{API_BASE}/?do=profile", headers={'Authorization': token}, params={'sid': sid}) as resp:
                 shop_response = await safe_json_response(resp)
         
         if shop_response.get('code') != 200:
@@ -888,7 +887,7 @@ async def handle_redeem_accumulate(request):
         for key, value in packs_data.items():
             try:
                 pack = json.loads(value) if isinstance(value, str) else value
-                if str(pack.get('id')) == str(pack_id):
+                if str(pack.get('id')) == str(pack_id) and pack.get('type') == 2:
                     target_pack = pack
                     need_pay = pack.get('needpay', 0)
                     break
@@ -896,7 +895,7 @@ async def handle_redeem_accumulate(request):
                 pass
         
         if not target_pack:
-            return web.json_response({'code': 404, 'msg': '礼包不存在'}, status=404)
+            return web.json_response({'code': 404, 'msg': '礼包不存在或不是累充礼包'}, status=404)
         
         if total_pay < need_pay:
             return web.json_response({'code': 400, 'msg': f'累计充值不足，需要累计充值{need_pay}元，当前累计充值{total_pay}元'})
@@ -911,17 +910,19 @@ async def handle_redeem_accumulate(request):
         lc_packid = target_pack.get('rewards')
         if lc_packid and isinstance(lc_packid, list):
             success_all = True
-            for reward in lc_packid:
-                item_id = reward.get('item')
-                if item_id:
-                    async with session.get(f"{API_BASE}/?do=getGiftRewards", headers={'Authorization': token}, params={'sid': sid, 'packid': item_id}) as resp:
-                        reward_result = await safe_json_response(resp)
-                    if reward_result.get('code') != 200:
-                        success_all = False
-                        add_log_entry(f"累充礼包{pack_id}领取奖励{item_id}失败: {reward_result.get('msg', '未知错误')}")
+            async with aiohttp.ClientSession() as session:
+                for reward in lc_packid:
+                    item_id = reward.get('item')
+                    if item_id:
+                        async with session.get(f"{API_BASE}/?do=getGiftRewards", headers={'Authorization': token}, params={'sid': sid, 'packid': item_id}) as resp:
+                            reward_result = await safe_json_response(resp)
+                        if reward_result.get('code') != 200:
+                            success_all = False
+                            add_log_entry(f"累充礼包{pack_id}领取奖励{item_id}失败: {reward_result.get('msg', '未知错误')}")
         else:
-            async with session.get(f"{API_BASE}/?do=getGiftRewards", headers={'Authorization': token}, params={'sid': sid, 'packid': lc_packid if lc_packid else pack_id}) as resp:
-                result = await safe_json_response(resp)
+            async with aiohttp.ClientSession() as session:
+                async with session.get(f"{API_BASE}/?do=getGiftRewards", headers={'Authorization': token}, params={'sid': sid, 'packid': lc_packid if lc_packid else pack_id}) as resp:
+                    result = await safe_json_response(resp)
             if result.get('code') != 200:
                 return web.json_response(result)
         
