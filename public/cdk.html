@@ -217,6 +217,7 @@
         .badge-success { background-color: #52c41a; }
         .badge-fail { background-color: #ff4d4f; }
         .badge-info { background-color: #1890ff; }
+        .badge-warning { background-color: #ff9800; }
         
         .action-bar {
             display: flex;
@@ -288,6 +289,20 @@
             margin-left: 8px;
             display: inline-block;
         }
+        .cooldown-info {
+            background-color: #fff3e0;
+            border: 1px solid #ffb74d;
+            padding: 8px 12px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            font-size: 13px;
+            color: #e65100;
+            display: none;
+        }
+        .cooldown-timer {
+            font-weight: bold;
+            color: #d32f2f;
+        }
     </style>
 </head>
 <body>
@@ -305,6 +320,10 @@
         <div class="shop-entry" style="margin-top: 8px;">
             <a href="/shop.html" target="_blank" class="btn btn-shop" style="padding: 5px 15px; font-size: 12px;">🎁 前往礼包商城</a>
         </div>
+    </div>
+
+    <div id="cooldown-info" class="cooldown-info">
+        ⏰ CDK领取冷却中，请等待 <span id="cooldown-timer" class="cooldown-timer">0分0秒</span> 后再试
     </div>
 
     <div class="grid">
@@ -412,6 +431,8 @@
     let loginTimer = null;
     let progressInterval = null;
     let logRefreshInterval = null;
+    let cooldownTimer = null;
+    let currentCooldownSeconds = 0;
 
     function showAlert(message, title = '提示') {
         document.getElementById('alert-title').textContent = title;
@@ -423,9 +444,58 @@
         document.getElementById('alert-modal').style.display = 'none';
     }
 
+    async function checkCooldown() {
+        try {
+            const response = await fetch('/api/check-cooldown', { method: 'GET', credentials: 'include' });
+            const data = await response.json();
+            
+            if (data.code === 200 && data.data) {
+                const cooldownInfo = document.getElementById('cooldown-info');
+                if (!data.data.can_redeem) {
+                    cooldownInfo.style.display = 'block';
+                    const totalSeconds = data.data.minutes_remaining * 60 + data.data.seconds_remaining;
+                    currentCooldownSeconds = totalSeconds;
+                    startCooldownTimer(totalSeconds);
+                    return false;
+                } else {
+                    cooldownInfo.style.display = 'none';
+                    if (cooldownTimer) clearInterval(cooldownTimer);
+                    return true;
+                }
+            }
+            return true;
+        } catch (error) {
+            console.error('检查冷却状态失败', error);
+            return true;
+        }
+    }
+
+    function startCooldownTimer(seconds) {
+        if (cooldownTimer) clearInterval(cooldownTimer);
+        
+        const timerElement = document.getElementById('cooldown-timer');
+        
+        function updateTimer() {
+            if (currentCooldownSeconds <= 0) {
+                clearInterval(cooldownTimer);
+                document.getElementById('cooldown-info').style.display = 'none';
+                checkCooldown();
+                return;
+            }
+            
+            const minutes = Math.floor(currentCooldownSeconds / 60);
+            const secs = currentCooldownSeconds % 60;
+            timerElement.textContent = `${minutes}分${secs}秒`;
+            currentCooldownSeconds--;
+        }
+        
+        updateTimer();
+        cooldownTimer = setInterval(updateTimer, 1000);
+    }
+
     async function verifyAndRestoreSession() {
         try {
-            const response = await fetch('/api/verify-session', { method: 'POST' });
+            const response = await fetch('/api/verify-session', { method: 'POST', credentials: 'include' });
             const data = await response.json();
             
             if (data.code === 200 && data.valid) {
@@ -441,6 +511,7 @@
                 
                 await loadCodes();
                 await loadServers();
+                await checkCooldown();
                 
                 const expiresAt = data.data.expiresAt;
                 startSessionTimer(expiresAt);
@@ -598,7 +669,8 @@
             const response = await fetch('/api/login', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ account, password })
+                body: JSON.stringify({ account, password }),
+                credentials: 'include'
             });
             
             const data = await response.json();
@@ -616,6 +688,7 @@
                 
                 await loadCodes();
                 await loadServers();
+                await checkCooldown();
                 
                 const expiresAt = data.data.expiresAt;
                 startSessionTimer(expiresAt);
@@ -642,7 +715,7 @@
         }
         
         try {
-            await fetch('/api/logout', { method: 'POST' });
+            await fetch('/api/logout', { method: 'POST', credentials: 'include' });
         } catch (error) {
             console.error('登出请求失败', error);
         }
@@ -708,6 +781,7 @@
                 roleNameSpan.textContent = userData.roleName;
                 roleUidSpan.textContent = userData.uid || '-';
                 
+                await checkCooldown();
                 document.getElementById('start-btn').disabled = false;
                 await loadLogs();
             } else if (data.code === 404 || (data.code === 200 && (!data.data || data.data.length === 0))) {
@@ -739,10 +813,16 @@
                     token: userData.token,
                     sid: userData.sid,
                     cdk: cdkCode,
-                    uid: userData.uid
-                })
+                    uid: userData.uid,
+                    account: userData.account
+                }),
+                credentials: 'include'
             });
             const data = await response.json();
+            
+            if (data.code === 429) {
+                return { success: false, msg: data.msg, cooldown: true };
+            }
             return { success: data.code === 200, msg: data.msg || (data.code === 200 ? '领取成功' : '领取失败') };
         } catch (error) {
             return { success: false, msg: error.message };
@@ -752,6 +832,12 @@
     async function startRedeemAll() {
         if (!userData.token || !userData.sid || !userData.uid) {
             showAlert('请先登录并选择区服获取角色信息');
+            return;
+        }
+        
+        const canRedeem = await checkCooldown();
+        if (!canRedeem) {
+            showAlert('CDK领取冷却中，请等待冷却结束后再试', '提示');
             return;
         }
         
@@ -790,6 +876,7 @@
         let successCount = codes.filter(c => c.status === 'success').length;
         let failCount = codes.filter(c => c.status === 'fail').length;
         let processedCount = 0;
+        let hasCooldownError = false;
 
         for (const item of itemsToProcess) {
             if (stopRequested) {
@@ -810,6 +897,12 @@
             });
 
             const result = await redeemSingleCDK(index, codeItem.key);
+            
+            if (result.cooldown) {
+                hasCooldownError = true;
+                showAlert(result.msg, '冷却中');
+                break;
+            }
             
             if (result.success) {
                 codes[index].status = 'success';
@@ -844,10 +937,13 @@
         
         await fetch('/api/progress/stop', { method: 'POST' });
         
-        if (stopRequested) {
+        if (hasCooldownError) {
+            await checkCooldown();
+        } else if (stopRequested) {
             showAlert('批量领取已手动停止', '提示');
         } else {
             showAlert('全部CDK已处理完毕！', '完成');
+            await checkCooldown();
         }
         
         await loadLogs();
@@ -996,6 +1092,7 @@
         
         progressInterval = setInterval(updateProgressFromServer, 1000);
         logRefreshInterval = setInterval(loadLogs, 30000);
+        setInterval(checkCooldown, 60000);
     });
 
     window.addEventListener('beforeunload', function() {
@@ -1007,6 +1104,9 @@
         }
         if (logRefreshInterval) {
             clearInterval(logRefreshInterval);
+        }
+        if (cooldownTimer) {
+            clearInterval(cooldownTimer);
         }
     });
 </script>

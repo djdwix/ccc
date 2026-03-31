@@ -21,6 +21,7 @@ API_BASE = 'http://sdk.gaz.tw:96/iapi'
 SECRET_KEY = 'd7a3f4c6e5b81290de4f3c2a1b0987654321fedcba0987654321abcdef567890'
 SESSION_EXPIRY = 15 * 60 * 1000
 MAX_LOG_ENTRIES = 1000
+CDK_COOLDOWN_MINUTES = 6
 
 DATA_DIR = Path(__file__).parent / 'data'
 LOGS_DIR = Path(__file__).parent / 'logs'
@@ -32,6 +33,7 @@ LOGS_DIR.mkdir(exist_ok=True)
 LOGIN_FAIL_FILE = DATA_DIR / 'login_fail.json'
 LOGIN_FAIL_BACKUP_FILE = DATA_DIR / 'login_fail.backup.json'
 SESSIONS_FILE = DATA_DIR / 'sessions.json'
+CDK_REDEEM_COOLDOWN_FILE = DATA_DIR / 'cdk_cooldown.json'
 
 codesData = [
     {"LC":"","key":"VIP111"},{"LC":"","key":"bc0318"},{"LC":"","key":"VIP222"},{"LC":"","key":"VIP333"},
@@ -247,6 +249,43 @@ def record_account_login_fail(account):
             record['lockedUntil'] = now + lock_time
     data['records'] = records
     save_login_fail_data(data)
+
+def load_cdk_cooldown():
+    try:
+        if not CDK_REDEEM_COOLDOWN_FILE.exists():
+            return {}
+        with open(CDK_REDEEM_COOLDOWN_FILE, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    except Exception:
+        return {}
+
+def save_cdk_cooldown(cooldown):
+    try:
+        with open(CDK_REDEEM_COOLDOWN_FILE, 'w', encoding='utf-8') as f:
+            json.dump(cooldown, f, indent=2)
+    except Exception:
+        pass
+
+def check_cdk_cooldown(account):
+    cooldown = load_cdk_cooldown()
+    now = int(time.time() * 1000)
+    last_redeem = cooldown.get(account, 0)
+    cooldown_ms = CDK_COOLDOWN_MINUTES * 60 * 1000
+    if last_redeem and (now - last_redeem) < cooldown_ms:
+        minutes_remaining = int((cooldown_ms - (now - last_redeem)) / 60000)
+        seconds_remaining = int(((cooldown_ms - (now - last_redeem)) % 60000) / 1000)
+        return {
+            'can_redeem': False,
+            'minutes_remaining': minutes_remaining,
+            'seconds_remaining': seconds_remaining,
+            'last_redeem': last_redeem
+        }
+    return {'can_redeem': True}
+
+def update_cdk_cooldown(account):
+    cooldown = load_cdk_cooldown()
+    cooldown[account] = int(time.time() * 1000)
+    save_cdk_cooldown(cooldown)
 
 def load_sessions():
     try:
@@ -535,6 +574,20 @@ async def handle_verify_session(request):
 async def handle_codes(request):
     return web.json_response({'code': 200, 'data': codesData, 'msg': '获取成功'})
 
+async def handle_check_cooldown(request):
+    try:
+        session_id = request.cookies.get('sessionId')
+        if not session_id:
+            return web.json_response({'code': 401, 'valid': False, 'msg': '未登录'})
+        session = get_session(session_id)
+        if not session:
+            return web.json_response({'code': 401, 'valid': False, 'msg': '会话无效'})
+        account = session['account']
+        cooldown_status = check_cdk_cooldown(account)
+        return web.json_response({'code': 200, 'data': cooldown_status, 'msg': '获取成功'})
+    except Exception as e:
+        return web.json_response({'code': 500, 'msg': f'获取冷却状态失败: {str(e)}'}, status=500)
+
 shop_data_cache = None
 shop_data_cache_time = 0
 SHOP_DATA_CACHE_TTL = 60
@@ -643,15 +696,30 @@ async def handle_redeem_cdk(request):
         sid = data.get('sid')
         cdk = data.get('cdk')
         uid = data.get('uid')
+        account = data.get('account')
         if not token or not sid or not cdk or not uid:
             return web.json_response({'code': 400, 'msg': '缺少必要参数'}, status=400)
+        
+        if account:
+            cooldown_status = check_cdk_cooldown(account)
+            if not cooldown_status['can_redeem']:
+                return web.json_response({
+                    'code': 429,
+                    'msg': f"领取过于频繁，请等待{cooldown_status['minutes_remaining']}分{cooldown_status['seconds_remaining']}秒后再试",
+                    'cooldown': cooldown_status
+                }, status=429)
+        
         async with aiohttp.ClientSession() as session:
             async with session.get(f"{API_BASE}/?do=getCDKGifts", headers={'Authorization': token}, params={'sid': sid, 'cdk': cdk, 'uid': uid}) as resp:
                 response_data = await safe_json_response(resp)
-        if response_data.get('code') == 200:
+        
+        if account and response_data.get('code') == 200:
+            update_cdk_cooldown(account)
+            add_log_entry(f"CDK {cdk} 领取成功", account)
+        elif response_data.get('code') == 200:
             add_log_entry(f"CDK {cdk} 领取成功")
         else:
-            add_log_entry(f"CDK {cdk} 领取失败: {response_data.get('msg', '未知错误')}")
+            add_log_entry(f"CDK {cdk} 领取失败: {response_data.get('msg', '未知错误')}", account)
         return web.json_response(response_data)
     except Exception as e:
         try:
@@ -710,6 +778,14 @@ async def handle_create_payment(request):
         
         if not phone:
             return web.json_response({'code': 400, 'msg': '请填写手机号'}, status=400)
+        
+        session_id = request.cookies.get('sessionId')
+        if session_id:
+            session = get_session(session_id)
+            if session and session.get('account'):
+                login_account = session.get('account')
+                if phone != login_account:
+                    return web.json_response({'code': 400, 'msg': '手机号必须与登录账号一致'}, status=400)
         
         import base64
         
@@ -940,6 +1016,7 @@ def setup_routes(app):
     app.router.add_post('/api/logout', handle_logout)
     app.router.add_post('/api/verify-session', handle_verify_session)
     app.router.add_get('/api/codes', handle_codes)
+    app.router.add_get('/api/check-cooldown', handle_check_cooldown)
     app.router.add_get('/api/shopdata', handle_shopdata)
     app.router.add_get('/api/role', handle_role)
     app.router.add_get('/api/profile', handle_profile)
