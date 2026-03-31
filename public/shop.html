@@ -146,6 +146,18 @@
         .search-clear:hover {
             color: #FFD700;
         }
+        .search-hint {
+            position: absolute;
+            right: 45px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 11px;
+            color: #8e9aaf;
+            background: rgba(0,0,0,0.5);
+            padding: 2px 6px;
+            border-radius: 12px;
+            pointer-events: none;
+        }
 
         .goods-grid {
             display: grid;
@@ -523,7 +535,8 @@
 
     <div class="search-bar">
         <i class="fas fa-search"></i>
-        <input type="text" id="searchInput" placeholder="搜索礼包名称、价格或描述...">
+        <input type="text" id="searchInput" placeholder="输入至少2个字搜索礼包名称、价格或描述...">
+        <span class="search-hint" id="searchHint">至少2字</span>
         <i class="fas fa-times search-clear" id="searchClear"></i>
     </div>
 
@@ -963,7 +976,8 @@
     function filterBySearch(items) {
         if (!currentSearchKeyword) return items;
         const keyword = currentSearchKeyword.toLowerCase().trim();
-        if (keyword.length < 4) return items;
+        if (keyword.length < 2) return items;
+        
         return items.filter(item => {
             const nameMatch = item.name && item.name.toLowerCase().includes(keyword);
             const priceMatch = item.price && item.price.toString().includes(keyword);
@@ -996,7 +1010,8 @@
         container.innerHTML = '';
         
         if (filtered.length === 0) {
-            container.innerHTML = '<div class="no-results"><i class="fas fa-search" style="font-size: 3rem; margin-bottom: 15px; opacity: 0.5;"></i><br>没有找到相关商品</div>';
+            const searchHint = currentSearchKeyword && currentSearchKeyword.length >= 2 ? `没有找到与"${escapeHtml(currentSearchKeyword)}"相关的商品` : '暂无商品';
+            container.innerHTML = `<div class="no-results"><i class="fas fa-search" style="font-size: 3rem; margin-bottom: 15px; opacity: 0.5;"></i><br>${searchHint}</div>`;
             return;
         }
         
@@ -1048,17 +1063,31 @@
 
     function renderAccumulatePacks() {
         let packs = [...accumulatePacks];
-        packs = filterBySearch(packs.map(p => ({ ...p, price: p.needpay, name: p.name }))).map(p => {
-            const original = accumulatePacks.find(op => op.id === p.id);
-            return original || p;
-        });
+        let filteredPacks = packs;
+        
+        if (currentSearchKeyword && currentSearchKeyword.length >= 2) {
+            const keyword = currentSearchKeyword.toLowerCase().trim();
+            filteredPacks = packs.filter(pack => {
+                const nameMatch = pack.name && pack.name.toLowerCase().includes(keyword);
+                const needpayMatch = pack.needpay && pack.needpay.toString().includes(keyword);
+                const descMatch = (pack.desc && pack.desc.toLowerCase().includes(keyword)) || 
+                                   (pack.rewards && Array.isArray(pack.rewards) && pack.rewards.some(r => 
+                                       (r.name && r.name.toLowerCase().includes(keyword)) || 
+                                       (r.item && r.item.toLowerCase().includes(keyword))
+                                   ));
+                return nameMatch || needpayMatch || descMatch;
+            });
+        } else {
+            filteredPacks = packs;
+        }
         
         const container = document.getElementById('goodsContainer');
         if (!container) return;
         container.innerHTML = '';
         
-        if (packs.length === 0) {
-            container.innerHTML = '<div class="no-results"><i class="fas fa-search" style="font-size: 3rem; margin-bottom: 15px; opacity: 0.5;"></i><br>没有找到相关礼包</div>';
+        if (filteredPacks.length === 0) {
+            const searchHint = currentSearchKeyword && currentSearchKeyword.length >= 2 ? `没有找到与"${escapeHtml(currentSearchKeyword)}"相关的礼包` : '暂无累充礼包';
+            container.innerHTML = `<div class="no-results"><i class="fas fa-search" style="font-size: 3rem; margin-bottom: 15px; opacity: 0.5;"></i><br>${searchHint}</div>`;
             return;
         }
         
@@ -1072,7 +1101,7 @@
         const gridDiv = document.createElement('div');
         gridDiv.className = 'goods-grid';
         
-        packs.forEach(pack => {
+        filteredPacks.forEach(pack => {
             const card = document.createElement('div');
             card.className = 'card accumulate-card';
             const canClaim = pack.can_claim && !pack.claimed;
@@ -1133,10 +1162,19 @@
         if (!container) return;
         
         let ptbItem = { name: '平台币充值', price: '10起', desc: '1元 = 1平台币，最低10元，最高3000元起充\n用于充值平台内购买代金、礼包等' };
-        const filtered = filterBySearch([ptbItem]);
+        let filtered = [ptbItem];
+        
+        if (currentSearchKeyword && currentSearchKeyword.length >= 2) {
+            const keyword = currentSearchKeyword.toLowerCase().trim();
+            filtered = filtered.filter(item => {
+                return item.name.toLowerCase().includes(keyword) || 
+                       item.desc.toLowerCase().includes(keyword) ||
+                       '10'.includes(keyword);
+            });
+        }
         
         if (filtered.length === 0) {
-            container.innerHTML = '<div class="no-results"><i class="fas fa-search" style="font-size: 3rem; margin-bottom: 15px; opacity: 0.5;"></i><br>没有找到相关商品</div>';
+            container.innerHTML = `<div class="no-results"><i class="fas fa-search" style="font-size: 3rem; margin-bottom: 15px; opacity: 0.5;"></i><br>没有找到与"${escapeHtml(currentSearchKeyword)}"相关的商品</div>`;
             return;
         }
         
@@ -1491,23 +1529,44 @@
 
     const searchInput = document.getElementById('searchInput');
     const searchClear = document.getElementById('searchClear');
+    const searchHint = document.getElementById('searchHint');
+    
+    function updateSearchHint() {
+        const keyword = searchInput.value;
+        if (keyword.length > 0 && keyword.length < 2) {
+            searchHint.style.display = 'block';
+            searchHint.textContent = '至少2字';
+        } else if (keyword.length >= 2) {
+            searchHint.style.display = 'none';
+        } else {
+            searchHint.style.display = 'block';
+            searchHint.textContent = '至少2字';
+        }
+    }
     
     searchInput.addEventListener('input', (e) => {
-        currentSearchKeyword = e.target.value;
-        if (currentSearchKeyword) {
-            searchClear.style.display = 'block';
-        } else {
-            searchClear.style.display = 'none';
+        const keyword = e.target.value;
+        if (keyword.length >= 2 || keyword.length === 0) {
+            currentSearchKeyword = keyword;
+            if (currentSearchKeyword) {
+                searchClear.style.display = 'block';
+            } else {
+                searchClear.style.display = 'none';
+            }
+            renderItems(currentType);
         }
-        renderItems(currentType);
+        updateSearchHint();
     });
     
     searchClear.addEventListener('click', () => {
         searchInput.value = '';
         currentSearchKeyword = '';
         searchClear.style.display = 'none';
+        updateSearchHint();
         renderItems(currentType);
     });
+    
+    updateSearchHint();
 
     async function init() {
         loadPurchaseRecords();
