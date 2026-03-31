@@ -1,0 +1,1411 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>最强蜗牛BT充值平台</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #0a0e1a 0%, #0f1422 100%);
+            color: #e8eaf6;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            gap: 15px;
+            background: rgba(18, 25, 45, 0.6);
+            backdrop-filter: blur(10px);
+            padding: 16px 24px;
+            border-radius: 24px;
+            border: 1px solid rgba(255,255,255,0.08);
+        }
+
+        .logo h1 {
+            font-size: 1.6rem;
+            background: linear-gradient(135deg, #FFD700, #FFA500);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            font-weight: 800;
+        }
+
+        .logo p {
+            font-size: 0.8rem;
+            color: #8e9aaf;
+        }
+
+        .stats {
+            display: flex;
+            gap: 20px;
+            background: rgba(0,0,0,0.3);
+            padding: 8px 20px;
+            border-radius: 40px;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-label {
+            font-size: 0.7rem;
+            color: #8e9aaf;
+            letter-spacing: 1px;
+        }
+
+        .stat-value {
+            font-weight: 700;
+            font-size: 1.2rem;
+            color: #FFD966;
+        }
+
+        .tab-bar {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 28px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            padding-bottom: 12px;
+            flex-wrap: wrap;
+        }
+
+        .tab-btn {
+            background: transparent;
+            border: none;
+            color: #8e9aaf;
+            font-size: 1rem;
+            font-weight: 600;
+            padding: 8px 20px;
+            border-radius: 40px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-family: inherit;
+        }
+
+        .tab-btn.active {
+            background: linear-gradient(135deg, #FFD700, #FFA500);
+            color: #0a0e1a;
+            box-shadow: 0 4px 12px rgba(255,165,0,0.3);
+        }
+
+        .goods-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 24px;
+            margin-top: 20px;
+        }
+
+        .card {
+            background: rgba(22, 32, 55, 0.7);
+            backdrop-filter: blur(8px);
+            border-radius: 28px;
+            border: 1px solid rgba(255,255,255,0.08);
+            overflow: hidden;
+            transition: transform 0.2s, box-shadow 0.2s;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 35px -12px rgba(0,0,0,0.5);
+            border-color: rgba(255,215,0,0.3);
+        }
+
+        .card-header {
+            padding: 20px 20px 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .card-name {
+            font-size: 1.25rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card-name i {
+            font-size: 1.6rem;
+        }
+
+        .text-blue { color: #3b82f6; }
+        .text-red { color: #ef4444; }
+        .text-green { color: #10b981; }
+        .text-purple { color: #a855f7; }
+        .text-orange { color: #f97316; }
+
+        .badge {
+            background: rgba(0,0,0,0.5);
+            padding: 4px 10px;
+            border-radius: 40px;
+            font-size: 0.7rem;
+            font-weight: 500;
+        }
+
+        .badge.limited {
+            background: #ef4444;
+            color: white;
+        }
+
+        .badge.unlimited {
+            background: #2e7d32;
+            color: white;
+        }
+
+        .badge.claimed {
+            background: #6b7280;
+            color: white;
+        }
+
+        .badge.can-claim {
+            background: #10b981;
+            color: white;
+        }
+
+        .badge.daily {
+            background: #3b82f6;
+            color: white;
+        }
+
+        .badge.weekly {
+            background: #8b5cf6;
+            color: white;
+        }
+
+        .card-desc {
+            padding: 16px 20px;
+            font-size: 0.85rem;
+            color: #b9c3db;
+            line-height: 1.5;
+            min-height: 80px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            white-space: pre-line;
+        }
+
+        .card-footer {
+            padding: 16px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: auto;
+        }
+
+        .price {
+            font-size: 1.6rem;
+            font-weight: 800;
+            color: #FFD966;
+        }
+
+        .price small {
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: #b9c3db;
+        }
+
+        .buy-btn {
+            background: linear-gradient(135deg, #FFD700, #FFA500);
+            border: none;
+            color: #0a0e1a;
+            font-weight: 700;
+            padding: 8px 20px;
+            border-radius: 40px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: inherit;
+            font-size: 0.9rem;
+        }
+
+        .buy-btn:hover {
+            transform: scale(1.02);
+            box-shadow: 0 4px 12px rgba(255,165,0,0.4);
+        }
+
+        .buy-btn.disabled {
+            background: #6b7280;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .buy-btn.disabled:hover {
+            transform: none;
+            box-shadow: none;
+        }
+
+        .ptb-card {
+            background: linear-gradient(135deg, rgba(34, 197, 94, 0.2), rgba(16, 185, 129, 0.1));
+            border: 1px solid rgba(34, 197, 94, 0.4);
+        }
+
+        .ptb-card .price {
+            color: #4ade80;
+        }
+
+        .accumulate-card {
+            background: linear-gradient(135deg, rgba(168, 85, 247, 0.2), rgba(139, 92, 246, 0.1));
+            border: 1px solid rgba(168, 85, 247, 0.4);
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            backdrop-filter: blur(12px);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background: #111827;
+            border-radius: 32px;
+            max-width: 500px;
+            width: 90%;
+            padding: 28px;
+            border: 1px solid rgba(255,215,0,0.3);
+            box-shadow: 0 25px 40px rgba(0,0,0,0.5);
+        }
+
+        .modal-header {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .modal-body {
+            margin: 20px 0;
+            line-height: 1.6;
+            color: #cbd5e6;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+        }
+
+        .modal-btn {
+            padding: 10px 24px;
+            border-radius: 40px;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .confirm-btn {
+            background: #FFD700;
+            color: #0a0e1a;
+        }
+
+        .cancel-btn {
+            background: #374151;
+            color: white;
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #1f2937;
+            color: #FFD966;
+            padding: 12px 24px;
+            border-radius: 60px;
+            font-weight: 500;
+            z-index: 1100;
+            box-shadow: 0 4px 12px black;
+            border-left: 4px solid #FFD700;
+            pointer-events: none;
+            transition: opacity 0.3s;
+        }
+
+        .loading-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.6);
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            backdrop-filter: blur(4px);
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid rgba(255,215,0,0.3);
+            border-top: 4px solid #FFD700;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #cbd5e6;
+        }
+        
+        .form-group input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #374151;
+            border-radius: 8px;
+            font-size: 14px;
+            background: #1f2937;
+            color: #fff;
+        }
+        
+        .form-group input:focus {
+            border-color: #FFD700;
+            outline: none;
+        }
+
+        .user-total {
+            background: rgba(0,0,0,0.3);
+            padding: 8px 16px;
+            border-radius: 40px;
+            font-size: 0.9rem;
+        }
+
+        .user-total span {
+            color: #FFD966;
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+
+        @media (max-width: 680px) {
+            body {
+                padding: 12px;
+            }
+            .goods-grid {
+                grid-template-columns: 1fr;
+            }
+            .stats {
+                width: 100%;
+                justify-content: space-between;
+            }
+        }
+
+        .cdk-return {
+            display: inline-block;
+            margin-bottom: 15px;
+        }
+        .cdk-return a {
+            color: #FFD700;
+            text-decoration: none;
+            font-size: 14px;
+        }
+        .cdk-return a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="cdk-return">
+        <a href="/" target="_blank">← 返回CDK领取工具</a>
+    </div>
+    <div class="header">
+        <div class="logo">
+            <h1><i class="fas fa-store"></i> 神秘商城</h1>
+            <p>限定礼包 · 周卡特惠 · 代钞专区</p>
+        </div>
+        <div class="stats">
+            <div class="stat-item">
+                <div class="stat-label">累计充值</div>
+                <div class="stat-value" id="totalRecharge">0</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">今日充值</div>
+                <div class="stat-value" id="todayRecharge">0</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="tab-bar">
+        <button class="tab-btn active" data-type="all">🔥 全部商品</button>
+        <button class="tab-btn" data-type="pack">🎁 限时礼包</button>
+        <button class="tab-btn" data-type="weekcard">📅 特权周卡</button>
+        <button class="tab-btn" data-type="voucher">💎 代钞专区</button>
+        <button class="tab-btn" data-type="accumulate">🏆 累充豪礼</button>
+        <button class="tab-btn" data-type="ptb">🪙 平台币充值</button>
+    </div>
+
+    <div id="goodsContainer" class="goods-grid"></div>
+</div>
+
+<div id="modal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header" id="modalIcon"></div>
+        <div class="modal-body" id="modalDesc"></div>
+        <div class="modal-buttons">
+            <button class="modal-btn cancel-btn" id="closeModalBtn">取消</button>
+            <button class="modal-btn confirm-btn" id="confirmBuyBtn">立即购买</button>
+        </div>
+    </div>
+</div>
+
+<div id="accumulateModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header" id="accumulateModalIcon"></div>
+        <div class="modal-body" id="accumulateModalDesc"></div>
+        <div class="modal-buttons">
+            <button class="modal-btn cancel-btn" id="closeAccumulateModalBtn">取消</button>
+            <button class="modal-btn confirm-btn" id="confirmClaimBtn">立即领取</button>
+        </div>
+    </div>
+</div>
+
+<div id="ptbModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <i class="fas fa-coins text-green" style="font-size:2rem;"></i>
+            <span>平台币充值</span>
+        </div>
+        <div class="modal-body">
+            <p>1元 = 1平台币，最低充值10元</p>
+            <div class="form-group">
+                <label>💰 充值金额 (元)</label>
+                <input type="number" id="ptbAmount" placeholder="例如 10" min="10" step="1">
+            </div>
+            <div class="form-group">
+                <label>📱 手机号</label>
+                <input type="tel" id="ptbPhone" placeholder="请输入充值手机号">
+            </div>
+        </div>
+        <div class="modal-buttons">
+            <button class="modal-btn cancel-btn" id="closePtbModalBtn">取消</button>
+            <button class="modal-btn confirm-btn" id="confirmPtbBtn">生成充值链接</button>
+        </div>
+    </div>
+</div>
+
+<div id="toast" class="toast" style="opacity:0;"></div>
+<div id="loadingOverlay" class="loading-overlay">
+    <div class="spinner"></div>
+</div>
+
+<script>
+    let shopItems = [];
+    let accumulatePacks = [];
+    let userTotalPay = 0;
+    let currentUser = null;
+    let currentSession = null;
+    let currentSelectedItem = null;
+    let currentSelectedPack = null;
+    let currentRoleSid = null;
+    let currentRoleUid = null;
+
+    const STORAGE_KEY = 'game_mall_session';
+
+    let purchaseRecords = {};
+
+    function loadPurchaseRecords() {
+        try {
+            const stored = localStorage.getItem('purchase_records');
+            if (stored) {
+                purchaseRecords = JSON.parse(stored);
+                const now = Date.now();
+                for (const key in purchaseRecords) {
+                    if (purchaseRecords[key].expiresAt && purchaseRecords[key].expiresAt < now) {
+                        delete purchaseRecords[key];
+                    }
+                }
+                savePurchaseRecords();
+            }
+        } catch(e) {}
+    }
+
+    function savePurchaseRecords() {
+        try {
+            localStorage.setItem('purchase_records', JSON.stringify(purchaseRecords));
+        } catch(e) {}
+    }
+
+    function getPurchaseKey(account, itemId) {
+        return `${account}_${itemId}`;
+    }
+
+    function getTodayStart() {
+        const now = new Date();
+        now.setHours(0, 0, 0, 0);
+        return now.getTime();
+    }
+
+    function getWeekStart() {
+        const now = new Date();
+        const day = now.getDay();
+        const diff = now.getDate() - day + (day === 0 ? -6 : 1);
+        const monday = new Date(now.setDate(diff));
+        monday.setHours(0, 0, 0, 0);
+        return monday.getTime();
+    }
+
+    function getIntervalStart(interval) {
+        if (interval === 1) return getTodayStart();
+        if (interval === 7) return getWeekStart();
+        return null;
+    }
+
+    function checkPurchaseLimit(item, account) {
+        if (item.limit === -1) return { allowed: true, remaining: -1 };
+        
+        const key = getPurchaseKey(account, item.id);
+        const record = purchaseRecords[key];
+        
+        if (!record) {
+            return { allowed: true, remaining: item.limit };
+        }
+        
+        let usedCount = record.count || 0;
+        
+        if (item.interval === 1 || item.interval === 7) {
+            const intervalStart = getIntervalStart(item.interval);
+            if (record.periodStart === intervalStart) {
+                const remaining = item.limit - usedCount;
+                return { allowed: remaining > 0, remaining: Math.max(0, remaining) };
+            } else {
+                return { allowed: true, remaining: item.limit };
+            }
+        }
+        
+        if (item.interval === 999) {
+            const remaining = item.limit - usedCount;
+            return { allowed: remaining > 0, remaining: Math.max(0, remaining) };
+        }
+        
+        return { allowed: true, remaining: item.limit };
+    }
+
+    function recordPurchase(item, account) {
+        const key = getPurchaseKey(account, item.id);
+        const record = purchaseRecords[key] || { count: 0 };
+        
+        let intervalStart = null;
+        if (item.interval === 1 || item.interval === 7) {
+            intervalStart = getIntervalStart(item.interval);
+        }
+        
+        if (item.interval === 1 || item.interval === 7) {
+            if (record.periodStart !== intervalStart) {
+                record.count = 1;
+                record.periodStart = intervalStart;
+            } else {
+                record.count = (record.count || 0) + 1;
+            }
+        } else {
+            record.count = (record.count || 0) + 1;
+        }
+        
+        if (item.interval === 999 && record.count >= item.limit) {
+            record.expiresAt = Date.now() + 365 * 24 * 60 * 60 * 1000;
+        }
+        
+        purchaseRecords[key] = record;
+        savePurchaseRecords();
+    }
+
+    async function apiRequest(endpoint, options = {}) {
+        const headers = {
+            'Content-Type': 'application/json',
+            ...options.headers
+        };
+        if (currentSession?.token) {
+            headers['Authorization'] = currentSession.token;
+        }
+        const config = {
+            ...options,
+            headers,
+            credentials: 'include'
+        };
+        try {
+            const response = await fetch(endpoint, config);
+            if (!response.ok) {
+                const errText = await response.text();
+                throw new Error(`HTTP ${response.status}: ${errText}`);
+            }
+            return await response.json();
+        } catch (e) {
+            console.error('API请求失败:', e);
+            throw e;
+        }
+    }
+
+    function showToast(msg, isError = false) {
+        const toast = document.getElementById('toast');
+        toast.textContent = msg;
+        toast.style.backgroundColor = isError ? '#991b1b' : '#1f2937';
+        toast.style.color = isError ? '#ffb3b3' : '#FFD966';
+        toast.style.opacity = '1';
+        setTimeout(() => {
+            toast.style.opacity = '0';
+        }, 3000);
+    }
+
+    function showLoading(show) {
+        const overlay = document.getElementById('loadingOverlay');
+        overlay.style.display = show ? 'flex' : 'none';
+    }
+
+    function getSessionFromStorage() {
+        const stored = localStorage.getItem(STORAGE_KEY);
+        if (stored) {
+            try {
+                const sess = JSON.parse(stored);
+                if (sess.expiresAt && sess.expiresAt > Date.now()) {
+                    return sess;
+                } else {
+                    localStorage.removeItem(STORAGE_KEY);
+                }
+            } catch(e) {}
+        }
+        return null;
+    }
+
+    async function fetchRoleInfo() {
+        if (!currentSession?.token) return false;
+        
+        try {
+            const serversRes = await apiRequest('/api/servers');
+            if (serversRes.code === 200 && serversRes.data.length > 0) {
+                for (const server of serversRes.data) {
+                    const roleRes = await apiRequest(`/api/role?token=${encodeURIComponent(currentSession.token)}&sid=${server.id}`);
+                    if (roleRes.code === 200 && roleRes.data && roleRes.data.length > 0) {
+                        currentRoleSid = server.id;
+                        currentRoleUid = roleRes.data[0].value;
+                        return true;
+                    }
+                }
+            }
+            return false;
+        } catch(e) {
+            console.warn('获取角色信息失败', e);
+            return false;
+        }
+    }
+
+    async function fetchUserProfile() {
+        if (!currentSession?.token || !currentRoleSid) return;
+        try {
+            const profileRes = await apiRequest(`/api/profile?token=${encodeURIComponent(currentSession.token)}&sid=${currentRoleSid}`);
+            if (profileRes.code === 200 && profileRes.data) {
+                const pay = profileRes.data.paydata || { total: 0, todaytotal: 0 };
+                document.getElementById('totalRecharge').innerText = (pay.total || 0).toLocaleString();
+                document.getElementById('todayRecharge').innerText = (pay.todaytotal || 0).toLocaleString();
+                userTotalPay = pay.total || 0;
+            }
+        } catch(e) {
+            console.warn('获取充值信息失败', e);
+        }
+    }
+
+    async function fetchAccumulatePacks() {
+        if (!currentSession?.token || !currentRoleSid) {
+            const res = await apiRequest('/api/accumulate-packs');
+            if (res.code === 200) {
+                accumulatePacks = res.data.packs || [];
+                userTotalPay = res.data.user_total || 0;
+                document.getElementById('totalRecharge').innerText = userTotalPay.toLocaleString();
+            }
+            return;
+        }
+        
+        try {
+            const res = await apiRequest(`/api/accumulate-packs?token=${encodeURIComponent(currentSession.token)}&sid=${currentRoleSid}`);
+            if (res.code === 200) {
+                accumulatePacks = res.data.packs || [];
+                userTotalPay = res.data.user_total || 0;
+                document.getElementById('totalRecharge').innerText = userTotalPay.toLocaleString();
+            }
+        } catch(e) {
+            console.warn('获取累充礼包失败', e);
+            const res = await apiRequest('/api/accumulate-packs');
+            if (res.code === 200) {
+                accumulatePacks = res.data.packs || [];
+                userTotalPay = res.data.user_total || 0;
+            }
+        }
+    }
+
+    async function verifyOrLogin() {
+        const stored = getSessionFromStorage();
+        if (stored && stored.sessionId) {
+            try {
+                const verifyRes = await apiRequest('/api/verify-session', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({})
+                });
+                if (verifyRes.valid) {
+                    currentSession = {
+                        sessionId: stored.sessionId,
+                        token: verifyRes.data.token,
+                        account: verifyRes.data.account,
+                        username: verifyRes.data.username,
+                        expiresAt: verifyRes.data.expiresAt
+                    };
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+                        sessionId: stored.sessionId,
+                        token: verifyRes.data.token,
+                        expiresAt: verifyRes.data.expiresAt
+                    }));
+                    
+                    const hasRole = await fetchRoleInfo();
+                    if (hasRole) {
+                        await fetchUserProfile();
+                        await fetchAccumulatePacks();
+                        return true;
+                    }
+                    await fetchAccumulatePacks();
+                    return true;
+                }
+            } catch(e) {}
+        }
+        
+        const guestAccount = 'guest_' + Date.now();
+        const guestPass = '123456';
+        try {
+            const loginRes = await apiRequest('/api/login', {
+                method: 'POST',
+                body: JSON.stringify({ account: guestAccount, password: guestPass })
+            });
+            if (loginRes.code === 200) {
+                currentSession = {
+                    sessionId: loginRes.data.sessionId,
+                    token: loginRes.data.token,
+                    account: loginRes.data.account,
+                    username: loginRes.data.username,
+                    expiresAt: loginRes.data.expiresAt
+                };
+                localStorage.setItem(STORAGE_KEY, JSON.stringify({
+                    sessionId: loginRes.data.sessionId,
+                    token: loginRes.data.token,
+                    expiresAt: loginRes.data.expiresAt
+                }));
+                
+                const hasRole = await fetchRoleInfo();
+                if (hasRole) {
+                    await fetchUserProfile();
+                    await fetchAccumulatePacks();
+                    return true;
+                }
+                await fetchAccumulatePacks();
+                return true;
+            } else {
+                showToast('自动登录失败，请刷新重试', true);
+                await fetchAccumulatePacks();
+                return false;
+            }
+        } catch(e) {
+            showToast('连接服务器失败', true);
+            await fetchAccumulatePacks();
+            return false;
+        }
+    }
+
+    async function loadShopData() {
+        try {
+            const response = await fetch('/api/shopdata');
+            if (!response.ok) throw new Error('商品数据加载失败');
+            const data = await response.json();
+            if (data.code === 200 && data.data && data.data.shopdata) {
+                const raw = data.data.shopdata;
+                const items = [];
+                for (let key in raw) {
+                    try {
+                        const parsed = JSON.parse(raw[key]);
+                        if (parsed.limit === undefined || parsed.limit === null) {
+                            parsed.limit = -1;
+                        }
+                        if (parsed.interval === undefined || parsed.interval === null) {
+                            parsed.interval = -1;
+                        }
+                        items.push(parsed);
+                    } catch(e) {}
+                }
+                shopItems = items.sort((a,b) => a.price - b.price);
+            } else {
+                showToast('商品数据格式错误', true);
+            }
+        } catch(e) {
+            showToast('无法加载商城数据', true);
+            console.error(e);
+        }
+    }
+
+    function getLimitText(item) {
+        if (item.limit === -1) return '<span class="badge unlimited">无限次</span>';
+        
+        let limitInfo = '';
+        if (item.interval === 1) limitInfo = '每日';
+        else if (item.interval === 7) limitInfo = '每周';
+        else if (item.interval === 999) limitInfo = '永久';
+        
+        if (limitInfo) {
+            return `<span class="badge limited">${limitInfo}限购${item.limit}次</span>`;
+        }
+        return `<span class="badge limited">限购${item.limit}次</span>`;
+    }
+
+    function getRemainingText(item, remaining) {
+        if (item.limit === -1) return '';
+        if (remaining === 0) return '<span class="badge limited">已售罄</span>';
+        
+        let limitInfo = '';
+        if (item.interval === 1) limitInfo = '今日';
+        else if (item.interval === 7) limitInfo = '本周';
+        else if (item.interval === 999) limitInfo = '永久';
+        
+        if (limitInfo) {
+            return `<span class="badge limited">${limitInfo}剩余${remaining}次</span>`;
+        }
+        return `<span class="badge limited">剩余${remaining}次</span>`;
+    }
+
+    function renderItems(type) {
+        if (type === 'ptb') {
+            renderPtbCard();
+            return;
+        }
+        
+        if (type === 'accumulate') {
+            renderAccumulatePacks();
+            return;
+        }
+        
+        let filtered = [];
+        if (type === 'all') filtered = [...shopItems];
+        else filtered = shopItems.filter(item => item.type === type);
+        
+        const container = document.getElementById('goodsContainer');
+        if (!container) return;
+        container.innerHTML = '';
+        
+        if (filtered.length === 0) {
+            container.innerHTML = '<div style="text-align: center; padding: 40px; color: #8e9aaf;">暂无商品</div>';
+            return;
+        }
+        
+        const account = currentSession?.account || '';
+        
+        filtered.forEach(item => {
+            const limitCheck = checkPurchaseLimit(item, account);
+            const remaining = limitCheck.remaining;
+            const isSoldOut = !limitCheck.allowed || remaining === 0;
+            
+            const card = document.createElement('div');
+            card.className = 'card';
+            
+            let limitText = '';
+            if (item.limit === -1) {
+                limitText = '<span class="badge unlimited">无限次</span>';
+            } else if (isSoldOut) {
+                limitText = '<span class="badge limited">已售罄</span>';
+            } else {
+                limitText = getRemainingText(item, remaining);
+            }
+            
+            const headerIconColor = item.iconcolor || 'text-purple';
+            const iconHtml = `<i class="${item.icon || 'fa-gift'} ${headerIconColor}"></i>`;
+            card.innerHTML = `
+                <div class="card-header">
+                    <div class="card-name">
+                        ${iconHtml}
+                        <span>${escapeHtml(item.name)}</span>
+                    </div>
+                    <div>${limitText}</div>
+                </div>
+                <div class="card-desc">${escapeHtml(item.desc).replace(/\\r\\n/g, '<br>')}</div>
+                <div class="card-footer">
+                    <div class="price"><small>¥</small> ${item.price}</div>
+                    <button class="buy-btn ${isSoldOut ? 'disabled' : ''}" data-id="${item.id}" ${isSoldOut ? 'disabled' : ''}>${isSoldOut ? '已售罄' : '购买'}</button>
+                </div>
+            `;
+            const btn = card.querySelector('.buy-btn');
+            if (!isSoldOut) {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    openBuyModal(item);
+                });
+            }
+            container.appendChild(card);
+        });
+    }
+
+    function renderAccumulatePacks() {
+        const container = document.getElementById('goodsContainer');
+        if (!container) return;
+        container.innerHTML = '';
+        
+        if (accumulatePacks.length === 0) {
+            container.innerHTML = '<div style="text-align: center; padding: 40px; color: #8e9aaf;">暂无累充礼包</div>';
+            return;
+        }
+        
+        const headerDiv = document.createElement('div');
+        headerDiv.className = 'user-total';
+        headerDiv.style.marginBottom = '20px';
+        headerDiv.style.textAlign = 'center';
+        headerDiv.innerHTML = `🎯 当前累计充值金额: <span>${userTotalPay.toLocaleString()}</span> 元`;
+        container.appendChild(headerDiv);
+        
+        const gridDiv = document.createElement('div');
+        gridDiv.className = 'goods-grid';
+        
+        accumulatePacks.forEach(pack => {
+            const card = document.createElement('div');
+            card.className = 'card accumulate-card';
+            const canClaim = pack.can_claim && !pack.claimed;
+            const claimed = pack.claimed;
+            
+            let statusBadge = '';
+            if (claimed) {
+                statusBadge = '<span class="badge claimed">已领取</span>';
+            } else if (pack.can_claim) {
+                statusBadge = '<span class="badge can-claim">可领取</span>';
+            } else {
+                statusBadge = `<span class="badge limited">需充值${pack.needpay}元</span>`;
+            }
+            
+            const iconColor = pack.iconcolor || 'text-purple';
+            const iconHtml = `<i class="${pack.icon || 'fa-trophy'} ${iconColor}"></i>`;
+            
+            let rewardText = '';
+            if (pack.rewards && Array.isArray(pack.rewards)) {
+                rewardText = pack.rewards.map(r => r.name || r.item).slice(0, 3).join(', ');
+                if (pack.rewards.length > 3) rewardText += '...';
+            } else if (pack.desc) {
+                rewardText = pack.desc.substring(0, 80);
+            }
+            
+            card.innerHTML = `
+                <div class="card-header">
+                    <div class="card-name">
+                        ${iconHtml}
+                        <span>${escapeHtml(pack.name)}</span>
+                    </div>
+                    <div>${statusBadge}</div>
+                </div>
+                <div class="card-desc">${escapeHtml(rewardText || pack.desc || '无描述')}</div>
+                <div class="card-footer">
+                    <div class="price"><small>累计</small> ${pack.needpay}<small>元</small></div>
+                    <button class="buy-btn ${claimed ? 'disabled' : ''}" data-id="${pack.id}" ${claimed ? 'disabled' : ''}>${claimed ? '已领取' : (canClaim ? '立即领取' : '未达标')}</button>
+                </div>
+            `;
+            const btn = card.querySelector('.buy-btn');
+            if (!claimed) {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    if (canClaim) {
+                        openAccumulateModal(pack);
+                    } else {
+                        showToast(`累计充值不足，需要累计充值${pack.needpay}元，当前累计充值${userTotalPay}元`, true);
+                    }
+                });
+            }
+            gridDiv.appendChild(card);
+        });
+        container.appendChild(gridDiv);
+    }
+
+    function renderPtbCard() {
+        const container = document.getElementById('goodsContainer');
+        if (!container) return;
+        container.innerHTML = `
+            <div class="card ptb-card" style="cursor: pointer;" id="ptbSpecialCard">
+                <div class="card-header">
+                    <div class="card-name">
+                        <i class="fas fa-coins text-green"></i>
+                        <span>平台币充值</span>
+                    </div>
+                    <div><span class="badge unlimited">官方直充</span></div>
+                </div>
+                <div class="card-desc">
+                    1元 = 1平台币，最低10元起充<br>
+                    用于游戏内购买道具、礼包等
+                </div>
+                <div class="card-footer">
+                    <div class="price">10 起</div>
+                    <button class="buy-btn" id="ptbMainBtn">立即充值</button>
+                </div>
+            </div>
+        `;
+        document.getElementById('ptbMainBtn')?.addEventListener('click', () => {
+            openPtbModal();
+        });
+        document.getElementById('ptbSpecialCard')?.addEventListener('click', (e) => {
+            if (e.target !== document.getElementById('ptbMainBtn')) {
+                openPtbModal();
+            }
+        });
+    }
+
+    function escapeHtml(str) {
+        if (!str) return '';
+        return str.replace(/[&<>]/g, function(m) {
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
+            return m;
+        }).replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g, function(c) {
+            return c;
+        });
+    }
+
+    function openBuyModal(item) {
+        if (!currentRoleSid || !currentRoleUid) {
+            showToast('正在获取角色信息，请稍后再试', true);
+            fetchRoleInfo().then(hasRole => {
+                if (hasRole) {
+                    openBuyModal(item);
+                } else {
+                    showToast('未找到角色，请先创建角色', true);
+                }
+            });
+            return;
+        }
+        
+        const account = currentSession?.account || '';
+        const limitCheck = checkPurchaseLimit(item, account);
+        
+        if (!limitCheck.allowed) {
+            let msg = '';
+            if (item.interval === 1) msg = '今日购买次数已达上限';
+            else if (item.interval === 7) msg = '本周购买次数已达上限';
+            else if (item.interval === 999) msg = '该商品永久限购次数已达上限';
+            else msg = '该商品购买次数已达上限';
+            showToast(msg, true);
+            renderItems(document.querySelector('.tab-btn.active')?.getAttribute('data-type') || 'all');
+            return;
+        }
+        
+        currentSelectedItem = item;
+        const modal = document.getElementById('modal');
+        const modalIcon = document.getElementById('modalIcon');
+        const modalDesc = document.getElementById('modalDesc');
+        let iconColor = item.iconcolor || 'text-purple';
+        let iconClass = item.icon || 'fa-gift';
+        modalIcon.innerHTML = `<i class="${iconClass} ${iconColor}" style="font-size:2rem;"></i> <span>${escapeHtml(item.name)}</span>`;
+        let limitDetail = '';
+        if (item.limit === -1) {
+            limitDetail = '无购买限制';
+        } else {
+            const remaining = limitCheck.remaining;
+            if (item.interval === 1) limitDetail = `今日还可购买 ${remaining} 次`;
+            else if (item.interval === 7) limitDetail = `本周还可购买 ${remaining} 次`;
+            else if (item.interval === 999) limitDetail = `永久还可购买 ${remaining} 次`;
+            else limitDetail = `还可购买 ${remaining} 次`;
+        }
+        modalDesc.innerHTML = `
+            <p><strong>💰 价格: ¥${item.price}</strong></p>
+            <p>📦 礼包内容:<br>${escapeHtml(item.desc).replace(/\\r\\n/g, '<br>')}</p>
+            <p>🛒 ${limitDetail}</p>
+            <div class="form-group" style="margin-top: 15px;">
+                <label for="phoneInput">📱 手机号</label>
+                <input type="tel" id="phoneInput" placeholder="请输入充值手机号" value="${currentSession?.account || ''}">
+            </div>
+        `;
+        modal.style.display = 'flex';
+    }
+
+    function openAccumulateModal(pack) {
+        currentSelectedPack = pack;
+        const modal = document.getElementById('accumulateModal');
+        const modalIcon = document.getElementById('accumulateModalIcon');
+        const modalDesc = document.getElementById('accumulateModalDesc');
+        let iconColor = pack.iconcolor || 'text-purple';
+        let iconClass = pack.icon || 'fa-trophy';
+        modalIcon.innerHTML = `<i class="${iconClass} ${iconColor}" style="font-size:2rem;"></i> <span>${escapeHtml(pack.name)}</span>`;
+        
+        let rewardsHtml = '';
+        if (pack.rewards && Array.isArray(pack.rewards)) {
+            rewardsHtml = '<ul style="margin-top: 10px; padding-left: 20px;">';
+            pack.rewards.forEach(reward => {
+                rewardsHtml += `<li>${escapeHtml(reward.name || reward.item)} x ${reward.num}</li>`;
+            });
+            rewardsHtml += '</ul>';
+        } else if (pack.desc) {
+            rewardsHtml = `<p>${escapeHtml(pack.desc).replace(/\\r\\n/g, '<br>')}</p>`;
+        }
+        
+        modalDesc.innerHTML = `
+            <p><strong>🎯 领取条件: 累计充值达到 ${pack.needpay} 元</strong></p>
+            <p><strong>💰 当前累计充值: ${userTotalPay} 元</strong></p>
+            <p>📦 礼包内容:</p>
+            ${rewardsHtml}
+            ${userTotalPay >= pack.needpay ? '<p style="color: #4ade80;">✅ 已满足领取条件，点击下方按钮领取</p>' : `<p style="color: #ef4444;">❌ 还需充值 ${pack.needpay - userTotalPay} 元</p>`}
+        `;
+        modal.style.display = 'flex';
+    }
+
+    function openPtbModal() {
+        const modal = document.getElementById('ptbModal');
+        if (!modal) return;
+        document.getElementById('ptbAmount').value = '';
+        document.getElementById('ptbPhone').value = currentSession?.account || '';
+        modal.style.display = 'flex';
+    }
+
+    async function performPayment(item) {
+        if (!currentSession || !currentSession.token) {
+            showToast('请先登录', true);
+            await verifyOrLogin();
+            if (!currentSession) return false;
+        }
+        
+        if (!currentRoleSid || !currentRoleUid) {
+            const hasRole = await fetchRoleInfo();
+            if (!hasRole) {
+                showToast('未找到角色，请先创建角色', true);
+                return false;
+            }
+        }
+        
+        const account = currentSession.account;
+        const limitCheck = checkPurchaseLimit(item, account);
+        if (!limitCheck.allowed) {
+            showToast('购买次数已达上限', true);
+            renderItems(document.querySelector('.tab-btn.active')?.getAttribute('data-type') || 'all');
+            return false;
+        }
+        
+        const phoneInput = document.getElementById('phoneInput');
+        const phone = phoneInput ? phoneInput.value.trim() : '';
+        
+        if (!phone) {
+            showToast('请填写手机号', true);
+            return false;
+        }
+        
+        if (!/^1[3-9]\d{9}$/.test(phone)) {
+            showToast('请输入正确的手机号', true);
+            return false;
+        }
+        
+        showLoading(true);
+        try {
+            const paymentRes = await apiRequest('/api/create-payment', {
+                method: 'POST',
+                body: JSON.stringify({
+                    token: currentSession.token,
+                    sid: currentRoleSid,
+                    uid: currentRoleUid,
+                    item_id: String(item.id),
+                    amount: item.price,
+                    phone: phone
+                })
+            });
+            
+            if (paymentRes.code === 200 && paymentRes.data && paymentRes.data.payment_url) {
+                recordPurchase(item, account);
+                window.open(paymentRes.data.payment_url, '_blank');
+                showToast(`已打开支付窗口，请完成支付`, false);
+                renderItems(document.querySelector('.tab-btn.active')?.getAttribute('data-type') || 'all');
+                return true;
+            } else {
+                showToast(`获取支付链接失败: ${paymentRes.msg || '未知错误'}`, true);
+                return false;
+            }
+        } catch(e) {
+            showToast(`请求异常: ${e.message}`, true);
+            return false;
+        } finally {
+            showLoading(false);
+        }
+    }
+
+    async function performClaimPack(pack) {
+        if (!currentSession || !currentSession.token) {
+            showToast('请先登录', true);
+            await verifyOrLogin();
+            if (!currentSession) return false;
+        }
+        
+        if (!currentRoleSid) {
+            const hasRole = await fetchRoleInfo();
+            if (!hasRole) {
+                showToast('未找到角色，请先创建角色', true);
+                return false;
+            }
+        }
+        
+        showLoading(true);
+        try {
+            const claimRes = await apiRequest('/api/redeem-accumulate', {
+                method: 'POST',
+                body: JSON.stringify({
+                    token: currentSession.token,
+                    sid: currentRoleSid,
+                    pack_id: pack.id
+                })
+            });
+            
+            if (claimRes.code === 200) {
+                showToast(`领取成功！`, false);
+                await fetchAccumulatePacks();
+                renderItems('accumulate');
+                return true;
+            } else {
+                showToast(`领取失败: ${claimRes.msg || '未知错误'}`, true);
+                return false;
+            }
+        } catch(e) {
+            showToast(`请求异常: ${e.message}`, true);
+            return false;
+        } finally {
+            showLoading(false);
+        }
+    }
+
+    async function performPtbRecharge() {
+        const amountInput = document.getElementById('ptbAmount');
+        const phoneInput = document.getElementById('ptbPhone');
+        const amount = amountInput ? amountInput.value.trim() : '';
+        const phone = phoneInput ? phoneInput.value.trim() : '';
+        
+        if (!amount) {
+            showToast('请输入充值金额', true);
+            return;
+        }
+        const amountInt = parseInt(amount, 10);
+        if (isNaN(amountInt) || amountInt < 10) {
+            showToast('平台币充值最低10元', true);
+            return;
+        }
+        if (!phone) {
+            showToast('请填写手机号', true);
+            return;
+        }
+        if (!/^1[3-9]\d{9}$/.test(phone)) {
+            showToast('请输入正确的手机号', true);
+            return;
+        }
+        
+        showLoading(true);
+        try {
+            const res = await apiRequest('/api/ptb-recharge', {
+                method: 'POST',
+                body: JSON.stringify({ amount: amountInt, phone: phone })
+            });
+            if (res.code === 200 && res.data && res.data.payment_url) {
+                window.open(res.data.payment_url, '_blank');
+                showToast(`已打开平台币充值窗口`, false);
+                document.getElementById('ptbModal').style.display = 'none';
+            } else {
+                showToast(`平台币充值失败: ${res.msg || '未知错误'}`, true);
+            }
+        } catch(e) {
+            showToast(`请求异常: ${e.message}`, true);
+        } finally {
+            showLoading(false);
+        }
+    }
+
+    document.getElementById('confirmBuyBtn')?.addEventListener('click', async () => {
+        if (!currentSelectedItem) return;
+        document.getElementById('modal').style.display = 'none';
+        await performPayment(currentSelectedItem);
+        currentSelectedItem = null;
+    });
+    document.getElementById('closeModalBtn')?.addEventListener('click', () => {
+        document.getElementById('modal').style.display = 'none';
+        currentSelectedItem = null;
+    });
+    
+    document.getElementById('confirmClaimBtn')?.addEventListener('click', async () => {
+        if (!currentSelectedPack) return;
+        document.getElementById('accumulateModal').style.display = 'none';
+        await performClaimPack(currentSelectedPack);
+        currentSelectedPack = null;
+    });
+    document.getElementById('closeAccumulateModalBtn')?.addEventListener('click', () => {
+        document.getElementById('accumulateModal').style.display = 'none';
+        currentSelectedPack = null;
+    });
+    
+    window.addEventListener('click', (e) => {
+        const modal = document.getElementById('modal');
+        if (e.target === modal) {
+            modal.style.display = 'none';
+            currentSelectedItem = null;
+        }
+        const accumulateModal = document.getElementById('accumulateModal');
+        if (e.target === accumulateModal) {
+            accumulateModal.style.display = 'none';
+            currentSelectedPack = null;
+        }
+        const ptbModal = document.getElementById('ptbModal');
+        if (e.target === ptbModal) {
+            ptbModal.style.display = 'none';
+        }
+    });
+
+    document.getElementById('closePtbModalBtn')?.addEventListener('click', () => {
+        document.getElementById('ptbModal').style.display = 'none';
+    });
+    document.getElementById('confirmPtbBtn')?.addEventListener('click', () => {
+        performPtbRecharge();
+    });
+
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            const type = btn.getAttribute('data-type');
+            renderItems(type);
+        });
+    });
+
+    async function init() {
+        loadPurchaseRecords();
+        await verifyOrLogin();
+        await loadShopData();
+        renderItems('all');
+    }
+
+    init();
+</script>
+</body>
+</html>

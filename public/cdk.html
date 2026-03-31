@@ -1,0 +1,1187 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>蜗牛BT-CDK批量领取工具</title>
+    <style>
+        @font-face {
+            font-family: 'CustomFont';
+            src: url('12.woff2') format('woff2');
+            font-weight: normal;
+            font-style: normal;
+            font-display: swap;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'CustomFont', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        header {
+            background-color: #fff;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+            font-size: 24px;
+            font-weight: bold;
+        }
+        footer {
+            text-align: center;
+            margin-top: 20px;
+            padding: 10px;
+            color: #666;
+            font-size: 14px;
+        }
+        .section {
+            background-color: #fff;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .section-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #eee;
+            color: #333;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+        input[type="text"],
+        input[type="password"],
+        select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            background-color: #fff;
+        }
+        input[type="text"]:focus,
+        input[type="password"]:focus,
+        select:focus {
+            border-color: #4a90e2;
+            outline: none;
+            box-shadow: 0 0 5px rgba(74,144,226,0.3);
+        }
+        .btn {
+            display: inline-block;
+            background-color: #4a90e2;
+            color: #fff;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            text-align: center;
+            transition: background-color 0.2s;
+        }
+        .btn:hover { background-color: #357abd; }
+        .btn:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        .btn-danger { background-color: #e05d44; }
+        .btn-danger:hover { background-color: #c94c36; }
+        .btn-success { background-color: #52c41a; }
+        .btn-success:hover { background-color: #40a9ff; }
+        .btn-shop { background-color: #722ed1; }
+        .btn-shop:hover { background-color: #531dab; }
+        .btn-block { display: block; width: 100%; }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+        @media (min-width: 768px) {
+            .grid { grid-template-columns: 1fr 1fr; }
+            .grid-3 { grid-template-columns: 1fr 1fr 1fr; }
+        }
+        
+        .code-list {
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background-color: #fff;
+        }
+        .code-item {
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .code-item:last-child { border-bottom: none; }
+        .code-item.success { background-color: #e6f7ff; }
+        .code-item.fail { background-color: #fff1f0; }
+        .code-item.running { background-color: #f9f9f9; }
+        .code-key { font-family: monospace; font-weight: bold; color: #1890ff; }
+        .code-status { font-size: 12px; padding: 2px 6px; border-radius: 2px; }
+        .status-wait { background-color: #fafafa; color: #999; border: 1px solid #d9d9d9; }
+        .status-success { background-color: #f6ffed; color: #52c41a; border: 1px solid #b7eb8f; }
+        .status-fail { background-color: #fff2e8; color: #ff4d4f; border: 1px solid #ffa39e; }
+        .status-running { background-color: #e6f7ff; color: #1890ff; border: 1px solid #91d5ff; }
+        
+        .log-area {
+            background-color: #1e1e1e;
+            color: #d4d4d4;
+            padding: 15px;
+            border-radius: 4px;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 12px;
+            height: 300px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+        .log-info { color: #52c41a; }
+        .log-error { color: #ff4d4f; }
+        
+        .progress-bar {
+            height: 20px;
+            background-color: #e8e8e8;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 15px;
+            box-shadow: inset 0 1px 2px rgba(0,0,0,0.1);
+        }
+        .progress-inner {
+            height: 100%;
+            background-color: #52c41a;
+            width: 0%;
+            transition: width 0.3s ease;
+            position: relative;
+            background-image: linear-gradient(45deg, rgba(255,255,255,0.15) 25%, transparent 25%, transparent 50%, rgba(255,255,255,0.15) 50%, rgba(255,255,255,0.15) 75%, transparent 75%, transparent);
+            background-size: 40px 40px;
+            animation: progress-bar-stripes 1s linear infinite;
+        }
+        @keyframes progress-bar-stripes {
+            from { background-position: 40px 0; }
+            to { background-position: 0 0; }
+        }
+        .progress-text {
+            text-align: center;
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #333;
+        }
+        
+        .user-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: #e6f7ff;
+            padding: 10px 15px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+            border: 1px solid #91d5ff;
+        }
+        .user-name { font-weight: bold; color: #1890ff; }
+        .session-time { font-size: 12px; color: #ff4d4f; font-weight: bold; }
+        
+        .badge {
+            display: inline-block;
+            padding: 2px 6px;
+            font-size: 12px;
+            border-radius: 10px;
+            color: #fff;
+            margin-left: 5px;
+        }
+        .badge-success { background-color: #52c41a; }
+        .badge-fail { background-color: #ff4d4f; }
+        .badge-info { background-color: #1890ff; }
+        
+        .action-bar {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        .modal-title { font-size: 18px; font-weight: bold; margin-bottom: 15px; }
+        .modal-buttons { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
+        
+        .loading-spin {
+            display: inline-block;
+            width: 14px;
+            height: 14px;
+            border: 2px solid #fff;
+            border-top-color: transparent;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            vertical-align: middle;
+            margin-right: 5px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        
+        .tips {
+            background-color: #fffbe6;
+            border: 1px solid #ffe58f;
+            padding: 10px 15px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+            font-size: 13px;
+            color: #614d0c;
+        }
+        .lc-checkbox {
+            margin-left: 10px;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 12px;
+            font-weight: normal;
+        }
+        .lc-checkbox input {
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+        }
+        .code-info {
+            display: flex;
+            flex-direction: column;
+        }
+        .code-type {
+            font-size: 11px;
+            color: #888;
+        }
+        .shop-entry {
+            text-align: right;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>蜗牛BT-CDK批量领取工具</h1>
+    </header>
+
+    <div class="tips" id="global-tips">
+        系统提示：本工具支持自动检测福利码类型（CDK），一键自动批量领取。累充礼包在商城领取，会话有效期为15分钟，过期需重新登录。福利码领取期间禁止退出登录和切换区服。若界面提示响应格式错误则主服务器正在维护
+        <div class="shop-entry" style="margin-top: 8px;">
+            <a href="/shop.html" target="_blank" class="btn btn-shop" style="padding: 5px 15px; font-size: 12px;">🎁 前往礼包商城</a>
+        </div>
+    </div>
+
+    <div class="grid">
+        <div class="section" id="login-section">
+            <div class="section-title">1. 账号登录</div>
+            <div id="login-form">
+                <div class="form-group">
+                    <label for="account">游戏账号</label>
+                    <input type="text" id="account" placeholder="请输入游戏账号" autocomplete="username">
+                </div>
+                <div class="form-group">
+                    <label for="password">游戏密码</label>
+                    <input type="password" id="password" placeholder="请输入密码" autocomplete="current-password">
+                </div>
+                <button id="login-btn" class="btn btn-block" onclick="handleLogin()">登 录</button>
+            </div>
+            <div id="user-display" style="display: none;">
+                <div class="user-info">
+                    <div>欢迎你，<span class="user-name" id="display-username">加载中...</span></div>
+                    <div class="session-time" id="session-timer">15:00:00</div>
+                </div>
+                <div class="form-group">
+                    <label for="server-select">选择区服</label>
+                    <select id="server-select" onchange="handleServerChange()">
+                        <option value="">-- 请选择区服 --</option>
+                    </select>
+                </div>
+                <div class="form-group" id="role-info" style="display: none; background-color: #f6ffed; padding: 10px; border-radius: 4px; border: 1px solid #b7eb8f;">
+                    <div><strong>角色名:</strong> <span id="role-name" style="color: #52c41a; font-weight: bold;">-</span></div>
+                    <div><strong>等级:</strong> <span id="role-level">-</span> | <strong>UID:</strong> <span id="role-uid">-</span></div>
+                </div>
+                <div class="action-bar">
+                    <button class="btn btn-danger" id="logout-btn" onclick="handleLogout()" disabled>退出登录</button>
+                    <button class="btn btn-success" id="refresh-role-btn" onclick="checkRoleInfo()" disabled>刷新角色信息</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-title">
+                2. 福利码列表
+                <div>
+                    <span class="badge badge-info" id="total-badge">总计: 0</span>
+                    <span class="badge badge-success" id="success-badge">成功: 0</span>
+                    <span class="badge badge-fail" id="fail-badge">失败: 0</span>
+                </div>
+            </div>
+            <div class="action-bar">
+                <button class="btn btn-success" id="start-btn" onclick="startRedeemAll()" disabled>一键领取全部</button>
+                <button class="btn btn-danger" id="stop-btn" onclick="stopRedeem()" style="display: none;">停止领取</button>
+                <button class="btn" id="reset-btn" onclick="resetList()" style="background-color: #8c8c8c; color: white;">重置列表状态</button>
+                <button class="btn" id="toggle-lc-btn" onclick="toggleAllLC()" style="background-color: #722ed1; color: white;">全部LC: 全选</button>
+            </div>
+            
+            <div class="progress-text" id="progress-text" style="display: none;">准备中 0/0</div>
+            <div class="progress-bar" style="display: none;" id="progress-bar-container">
+                <div class="progress-inner" id="progress-bar"></div>
+            </div>
+            
+            <div class="code-list" id="code-list-container">
+                <div style="padding: 20px; text-align: center; color: #999;">正在加载福利码...</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="section">
+        <div class="section-title">
+            3. 执行日志
+            <div>
+                <span style="font-size: 12px; font-weight: normal; color: #999;">总条数: <span id="log-entries-count">0</span></span>
+                <button class="btn btn-success" style="padding: 2px 8px; font-size: 12px; margin-left: 10px;" onclick="refreshLogs()">手动刷新</button>
+                <button class="btn" style="padding: 2px 8px; font-size: 12px; margin-left: 5px; background-color: #8c8c8c; color: white;" onclick="clearLogDisplay()">清空屏幕</button>
+            </div>
+        </div>
+        <div class="log-area" id="execution-log">等待操作...</div>
+    </div>
+
+    <footer>
+        <p>&copy; 2026 蜗牛BT - CDK批量领取工具</p>
+    </footer>
+</div>
+
+<div class="modal" id="alert-modal">
+    <div class="modal-content">
+        <div class="modal-title" id="alert-title">提示</div>
+        <div id="alert-message">内容</div>
+        <div class="modal-buttons">
+            <button class="btn" onclick="closeModal()">确定</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    let userData = {
+        token: '',
+        username: '',
+        account: '',
+        sid: '',
+        roleName: '',
+        uid: ''
+    };
+    
+    let codes = [];
+    let lcEnabled = {};
+    let isRunning = false;
+    let stopRequested = false;
+    let loginTimer = null;
+    let progressInterval = null;
+    let logRefreshInterval = null;
+
+    function showAlert(message, title = '提示') {
+        document.getElementById('alert-title').textContent = title;
+        document.getElementById('alert-message').textContent = message;
+        document.getElementById('alert-modal').style.display = 'flex';
+    }
+
+    function closeModal() {
+        document.getElementById('alert-modal').style.display = 'none';
+    }
+
+    async function verifyAndRestoreSession() {
+        try {
+            const response = await fetch('/api/verify-session', { method: 'POST' });
+            const data = await response.json();
+            
+            if (data.code === 200 && data.valid) {
+                userData.account = data.data.account;
+                userData.username = data.data.username;
+                userData.token = data.data.token;
+                
+                document.getElementById('login-form').style.display = 'none';
+                document.getElementById('user-display').style.display = 'block';
+                document.getElementById('display-username').textContent = userData.username || userData.account;
+                document.getElementById('logout-btn').disabled = false;
+                document.getElementById('refresh-role-btn').disabled = false;
+                
+                await loadCodes();
+                await loadServers();
+                
+                const expiresAt = data.data.expiresAt;
+                startSessionTimer(expiresAt);
+                
+                return true;
+            }
+            return false;
+        } catch (error) {
+            console.error('Session验证失败', error);
+            return false;
+        }
+    }
+
+    function startSessionTimer(expiresAt) {
+        if (loginTimer) clearInterval(loginTimer);
+        
+        const timerElement = document.getElementById('session-timer');
+        
+        function updateTimer() {
+            const now = Date.now();
+            const distance = expiresAt - now;
+            
+            if (distance < 0) {
+                clearInterval(loginTimer);
+                timerElement.textContent = "会话已过期";
+                showAlert('会话已过期，请重新登录', '会话过期');
+                handleLogout();
+                return;
+            }
+            
+            const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+            
+            timerElement.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        }
+        
+        updateTimer();
+        loginTimer = setInterval(updateTimer, 1000);
+    }
+
+    async function loadServers() {
+        try {
+            const response = await fetch('/api/servers');
+            const data = await response.json();
+            
+            if (data.code === 200) {
+                const select = document.getElementById('server-select');
+                select.innerHTML = '<option value="">-- 请选择区服 --</option>';
+                data.data.forEach(server => {
+                    const option = document.createElement('option');
+                    option.value = server.id;
+                    option.textContent = server.name;
+                    select.appendChild(option);
+                });
+            }
+        } catch (error) {
+            showAlert('加载服务器列表失败', '错误');
+        }
+    }
+
+    async function loadCodes() {
+        try {
+            const response = await fetch('/api/codes');
+            const data = await response.json();
+            
+            if (data.code === 200) {
+                codes = data.data.map(item => ({
+                    ...item,
+                    status: 'wait',
+                    result: ''
+                }));
+                lcEnabled = {};
+                codes.forEach((item, idx) => {
+                    if (item.LC && item.LC !== '') {
+                        lcEnabled[idx] = true;
+                    }
+                });
+                renderCodes();
+                updateBadges();
+                updateLCToggleButton();
+            }
+        } catch (error) {
+            showAlert('加载福利码失败', '错误');
+        }
+    }
+
+    function toggleLC(index) {
+        if (isRunning) {
+            showAlert('福利码领取进行中，无法修改选择', '提示');
+            return;
+        }
+        if (codes[index] && codes[index].LC && codes[index].LC !== '') {
+            lcEnabled[index] = !lcEnabled[index];
+            renderCodes();
+            updateLCToggleButton();
+        }
+    }
+
+    function toggleAllLC() {
+        if (isRunning) {
+            showAlert('福利码领取进行中，无法修改选择', '提示');
+            return;
+        }
+        
+        const lcIndices = [];
+        codes.forEach((item, idx) => {
+            if (item.LC && item.LC !== '') {
+                lcIndices.push(idx);
+            }
+        });
+        
+        if (lcIndices.length === 0) return;
+        
+        const allSelected = lcIndices.every(idx => lcEnabled[idx] === true);
+        
+        lcIndices.forEach(idx => {
+            lcEnabled[idx] = !allSelected;
+        });
+        
+        renderCodes();
+        updateLCToggleButton();
+    }
+
+    function updateLCToggleButton() {
+        const btn = document.getElementById('toggle-lc-btn');
+        if (!btn) return;
+        
+        const lcIndices = codes.filter((item, idx) => item.LC && item.LC !== '');
+        if (lcIndices.length === 0) {
+            btn.style.display = 'none';
+            return;
+        }
+        
+        btn.style.display = 'inline-block';
+        const allSelected = codes.every((item, idx) => {
+            if (item.LC && item.LC !== '') {
+                return lcEnabled[idx] === true;
+            }
+            return true;
+        });
+        
+        btn.textContent = allSelected ? '全部LC: 全不选' : '全部LC: 全选';
+    }
+
+    function renderCodes() {
+        const container = document.getElementById('code-list-container');
+        if (codes.length === 0) {
+            container.innerHTML = '<div style="padding: 20px; text-align: center; color: #999;">暂无福利码</div>';
+            return;
+        }
+
+        container.innerHTML = '';
+        codes.forEach((item, index) => {
+            const div = document.createElement('div');
+            div.className = `code-item code-${item.status}`;
+            div.id = `code-item-${index}`;
+            
+            const isLC = !!(item.LC && item.LC !== '');
+            const typeText = isLC ? `[礼包LC:${item.LC}]` : '[CDK码]';
+            
+            let statusClass = 'status-wait';
+            let statusText = '等待中';
+            
+            if (item.status === 'success') {
+                statusClass = 'status-success';
+                statusText = '成功';
+            } else if (item.status === 'fail') {
+                statusClass = 'status-fail';
+                statusText = '失败';
+            } else if (item.status === 'running') {
+                statusClass = 'status-running';
+                statusText = '领取中...';
+            }
+
+            let lcCheckboxHtml = '';
+            if (isLC && item.status === 'wait' && !isRunning) {
+                lcCheckboxHtml = `
+                    <label class="lc-checkbox">
+                        <input type="checkbox" ${lcEnabled[index] ? 'checked' : ''} onchange="toggleLC(${index})">
+                        <span style="font-size: 11px;">领取此LC</span>
+                    </label>
+                `;
+            } else if (isLC && item.status !== 'wait') {
+                lcCheckboxHtml = `<span style="font-size: 11px; color: #888; margin-left: 10px;">已${item.status === 'success' ? '领取' : '跳过'}</span>`;
+            } else if (isLC && isRunning && item.status === 'wait') {
+                lcCheckboxHtml = `<span style="font-size: 11px; color: #888; margin-left: 10px;">${lcEnabled[index] ? '等待领取' : '已跳过'}</span>`;
+            }
+
+            div.innerHTML = `
+                <div class="code-info">
+                    <div>
+                        <span style="color: #888; font-size: 12px;">${typeText}</span>
+                        <span class="code-key">${item.key}</span>
+                        ${lcCheckboxHtml}
+                    </div>
+                    <div class="code-type" style="font-size: 11px; color: #aaa;">
+                        ${isLC ? 'LC礼包码（累充礼包）' : 'CDK兑换码'}
+                    </div>
+                    <div style="font-size: 12px; color: #666;" id="code-result-${index}">${item.result || ''}</div>
+                </div>
+                <span class="code-status ${statusClass}" id="code-status-${index}">${statusText}</span>
+            `;
+            container.appendChild(div);
+        });
+    }
+
+    function updateBadges() {
+        document.getElementById('total-badge').textContent = `总计: ${codes.length}`;
+        const success = codes.filter(c => c.status === 'success').length;
+        const fail = codes.filter(c => c.status === 'fail').length;
+        
+        document.getElementById('success-badge').textContent = `成功: ${success}`;
+        document.getElementById('fail-badge').textContent = `失败: ${fail}`;
+    }
+
+    async function handleLogin() {
+        if (isRunning) {
+            showAlert('福利码领取进行中，请先停止或等待完成后再登录', '提示');
+            return;
+        }
+        
+        const accountInput = document.getElementById('account');
+        const passwordInput = document.getElementById('password');
+        const btn = document.getElementById('login-btn');
+        
+        const account = accountInput.value.trim();
+        const password = passwordInput.value.trim();
+        
+        if (!account || !password) {
+            showAlert('请输入账号和密码');
+            return;
+        }
+        
+        btn.disabled = true;
+        btn.innerHTML = '<span class="loading-spin"></span>登录中...';
+        
+        try {
+            const response = await fetch('/api/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ account, password })
+            });
+            
+            const data = await response.json();
+            
+            if (data.code === 200) {
+                userData.token = data.data.token;
+                userData.username = data.data.username;
+                userData.account = account;
+                
+                document.getElementById('login-form').style.display = 'none';
+                document.getElementById('user-display').style.display = 'block';
+                document.getElementById('display-username').textContent = userData.username || userData.account;
+                document.getElementById('logout-btn').disabled = false;
+                document.getElementById('refresh-role-btn').disabled = false;
+                
+                await loadCodes();
+                await loadServers();
+                
+                const expiresAt = data.data.expiresAt;
+                startSessionTimer(expiresAt);
+                
+                showAlert('登录成功！请选择区服。', '成功');
+                await loadLogs();
+            } else if (data.code === 403 && data.locked) {
+                showAlert(`该账号登录失败次数过多，已被封禁${data.minutesRemaining}分钟`, '登录受限');
+            } else {
+                showAlert(data.msg || '登录失败', '登录失败');
+            }
+        } catch (error) {
+            showAlert('网络错误，登录请求失败', '错误');
+        } finally {
+            btn.disabled = false;
+            btn.textContent = '登 录';
+        }
+    }
+
+    async function handleLogout() {
+        if (isRunning) {
+            showAlert('福利码领取进行中，请先停止后再退出登录', '提示');
+            return;
+        }
+        
+        try {
+            await fetch('/api/logout', { method: 'POST' });
+        } catch (error) {
+            console.error('登出请求失败', error);
+        }
+        
+        userData = { token: '', username: '', account: '', sid: '', roleName: '', uid: '' };
+        if (loginTimer) clearInterval(loginTimer);
+        
+        document.getElementById('login-form').style.display = 'block';
+        document.getElementById('user-display').style.display = 'none';
+        document.getElementById('role-info').style.display = 'none';
+        document.getElementById('server-select').value = '';
+        
+        document.getElementById('start-btn').disabled = true;
+        document.getElementById('logout-btn').disabled = true;
+        document.getElementById('refresh-role-btn').disabled = true;
+        
+        document.getElementById('account').value = '';
+        document.getElementById('password').value = '';
+        
+        showAlert('已退出登录');
+    }
+
+    async function handleServerChange() {
+        if (isRunning) {
+            showAlert('福利码领取进行中，无法切换区服', '提示');
+            const select = document.getElementById('server-select');
+            select.value = userData.sid || '';
+            return;
+        }
+        
+        const select = document.getElementById('server-select');
+        userData.sid = select.value;
+        
+        if (!userData.sid) {
+            document.getElementById('start-btn').disabled = true;
+            document.getElementById('role-info').style.display = 'none';
+            return;
+        }
+        
+        await checkRoleInfo();
+    }
+
+    async function checkRoleInfo() {
+        if (!userData.sid || !userData.token) return;
+        
+        const roleInfoDiv = document.getElementById('role-info');
+        const roleNameSpan = document.getElementById('role-name');
+        const roleLevelSpan = document.getElementById('role-level');
+        const roleUidSpan = document.getElementById('role-uid');
+        
+        roleInfoDiv.style.display = 'block';
+        roleNameSpan.textContent = '获取中...';
+        roleLevelSpan.textContent = '-';
+        roleUidSpan.textContent = '-';
+        
+        try {
+            const response = await fetch(`/api/role?token=${encodeURIComponent(userData.token)}&sid=${userData.sid}`);
+            const data = await response.json();
+            
+            if (data.code === 200 && data.data && data.data.length > 0) {
+                const role = data.data[0];
+                userData.roleName = role.title || role.name;
+                userData.uid = role.value;
+                
+                roleNameSpan.textContent = userData.roleName;
+                roleUidSpan.textContent = userData.uid || '-';
+                
+                try {
+                    const profileRes = await fetch(`/api/profile?token=${encodeURIComponent(userData.token)}&sid=${userData.sid}`);
+                    const profileData = await profileRes.json();
+                    
+                    if (profileData.code === 200 && profileData.data) {
+                        roleLevelSpan.textContent = profileData.data.level || profileData.data.grade || '-';
+                    } else {
+                        roleLevelSpan.textContent = role.level || role.grade || '-';
+                    }
+                } catch (profileError) {
+                    roleLevelSpan.textContent = role.level || role.grade || '-';
+                }
+                
+                document.getElementById('start-btn').disabled = false;
+                await loadLogs();
+            } else if (data.code === 404 || (data.code === 200 && (!data.data || data.data.length === 0))) {
+                roleNameSpan.textContent = '未在该区服创建角色';
+                roleLevelSpan.textContent = '-';
+                roleUidSpan.textContent = '-';
+                document.getElementById('start-btn').disabled = true;
+                showAlert('获取角色信息失败或该区服无角色，请先进入游戏创建角色！', '提示');
+            } else {
+                roleNameSpan.textContent = '获取角色失败';
+                roleLevelSpan.textContent = '-';
+                roleUidSpan.textContent = '-';
+                document.getElementById('start-btn').disabled = true;
+                showAlert(data.msg || '获取角色信息失败，请检查网络或稍后重试', '提示');
+            }
+        } catch (error) {
+            console.error('获取角色信息失败:', error);
+            roleNameSpan.textContent = '网络错误';
+            roleLevelSpan.textContent = '-';
+            roleUidSpan.textContent = '-';
+            document.getElementById('start-btn').disabled = true;
+            showAlert('网络错误，获取角色信息失败，请检查网络连接', '错误');
+        }
+    }
+
+    async function redeemSingleLC(index, lcCode, attachedCdk) {
+        try {
+            const lcRes = await fetch('/api/redeem-lc', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    token: userData.token,
+                    sid: userData.sid,
+                    packid: lcCode
+                })
+            });
+            const lcData = await lcRes.json();
+            
+            if (lcData.code !== 200) {
+                return { success: false, msg: lcData.msg || 'LC领取失败' };
+            }
+            
+            if (attachedCdk && attachedCdk.key && attachedCdk.key.trim() !== '') {
+                await new Promise(resolve => setTimeout(resolve, 500));
+                
+                const cdkRes = await fetch('/api/redeem-cdk', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        token: userData.token,
+                        sid: userData.sid,
+                        cdk: attachedCdk.key,
+                        uid: userData.uid
+                    })
+                });
+                const cdkData = await cdkRes.json();
+                
+                if (cdkData.code !== 200) {
+                    return { success: false, msg: `LC领取成功，但附带CDK(${attachedCdk.key})领取失败: ${cdkData.msg || '未知错误'}` };
+                }
+                return { success: true, msg: `LC和附带CDK(${attachedCdk.key})均已领取成功` };
+            }
+            
+            return { success: true, msg: lcData.msg || 'LC领取成功' };
+        } catch (error) {
+            return { success: false, msg: error.message };
+        }
+    }
+
+    async function redeemSingleCDK(index, cdkCode) {
+        try {
+            const response = await fetch('/api/redeem-cdk', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    token: userData.token,
+                    sid: userData.sid,
+                    cdk: cdkCode,
+                    uid: userData.uid
+                })
+            });
+            const data = await response.json();
+            return { success: data.code === 200, msg: data.msg || (data.code === 200 ? '领取成功' : '领取失败') };
+        } catch (error) {
+            return { success: false, msg: error.message };
+        }
+    }
+
+    async function startRedeemAll() {
+        if (!userData.token || !userData.sid || !userData.uid) {
+            showAlert('请先登录并选择区服获取角色信息');
+            return;
+        }
+        
+        const itemsToProcess = [];
+        for (let i = 0; i < codes.length; i++) {
+            if (codes[i].status !== 'wait') continue;
+            
+            const isLC = !!(codes[i].LC && codes[i].LC !== '');
+            if (isLC && !lcEnabled[i]) {
+                continue;
+            }
+            itemsToProcess.push({ index: i, item: codes[i], isLC });
+        }
+        
+        if (itemsToProcess.length === 0) {
+            showAlert('没有等待领取的福利码，请重置列表或勾选LC礼包码');
+            return;
+        }
+
+        isRunning = true;
+        stopRequested = false;
+        
+        document.getElementById('start-btn').style.display = 'none';
+        document.getElementById('stop-btn').style.display = 'inline-block';
+        document.getElementById('reset-btn').disabled = true;
+        document.getElementById('server-select').disabled = true;
+        document.getElementById('toggle-lc-btn').disabled = true;
+        document.getElementById('logout-btn').disabled = true;
+        document.getElementById('refresh-role-btn').disabled = true;
+        
+        document.getElementById('progress-bar-container').style.display = 'block';
+        document.getElementById('progress-text').style.display = 'block';
+
+        await fetch('/api/progress/start', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ total: itemsToProcess.length })
+        });
+
+        await loadLogs();
+
+        let successCount = codes.filter(c => c.status === 'success').length;
+        let failCount = codes.filter(c => c.status === 'fail').length;
+        let processedCount = 0;
+
+        for (const item of itemsToProcess) {
+            if (stopRequested) {
+                await fetch('/api/progress/stop', { method: 'POST' });
+                break;
+            }
+            
+            const index = item.index;
+            const codeItem = item.item;
+            const isLCItem = item.isLC;
+            
+            processedCount++;
+            updateItemStatus(index, 'running', '领取中...');
+            
+            await fetch('/api/progress/update', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ current: processedCount })
+            });
+
+            let result;
+            if (isLCItem) {
+                const attachedCdk = codes.find(c => c.key === codeItem.key && !c.LC);
+                result = await redeemSingleLC(index, codeItem.LC, attachedCdk);
+            } else {
+                result = await redeemSingleCDK(index, codeItem.key);
+            }
+            
+            if (result.success) {
+                codes[index].status = 'success';
+                codes[index].result = result.msg;
+                successCount++;
+            } else {
+                codes[index].status = 'fail';
+                codes[index].result = result.msg;
+                failCount++;
+            }
+            
+            await fetch('/api/progress/update', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ success: successCount, fail: failCount })
+            });
+
+            updateItemStatus(index, codes[index].status, codes[index].result);
+            updateBadges();
+            updateProgressBar(processedCount, itemsToProcess.length);
+            
+            await new Promise(resolve => setTimeout(resolve, 800));
+        }
+
+        isRunning = false;
+        document.getElementById('start-btn').style.display = 'inline-block';
+        document.getElementById('stop-btn').style.display = 'none';
+        document.getElementById('reset-btn').disabled = false;
+        document.getElementById('server-select').disabled = false;
+        document.getElementById('toggle-lc-btn').disabled = false;
+        document.getElementById('logout-btn').disabled = false;
+        document.getElementById('refresh-role-btn').disabled = false;
+        
+        await fetch('/api/progress/stop', { method: 'POST' });
+        
+        if (stopRequested) {
+            showAlert('批量领取已手动停止', '提示');
+        } else {
+            showAlert('全部福利码已处理完毕！', '完成');
+        }
+        
+        await loadLogs();
+    }
+
+    function updateItemStatus(index, status, resultText) {
+        codes[index].status = status;
+        codes[index].result = resultText;
+        
+        const itemDiv = document.getElementById(`code-item-${index}`);
+        const statusSpan = document.getElementById(`code-status-${index}`);
+        const resultDiv = document.getElementById(`code-result-${index}`);
+        
+        if (!itemDiv) return;
+
+        itemDiv.className = `code-item code-${status}`;
+        if (resultDiv) resultDiv.textContent = resultText;
+
+        if (status === 'success') {
+            if (statusSpan) {
+                statusSpan.className = 'code-status status-success';
+                statusSpan.textContent = '成功';
+            }
+        } else if (status === 'fail') {
+            if (statusSpan) {
+                statusSpan.className = 'code-status status-fail';
+                statusSpan.textContent = '失败';
+            }
+        } else if (status === 'running') {
+            if (statusSpan) {
+                statusSpan.className = 'code-status status-running';
+                statusSpan.textContent = '领取中...';
+            }
+        } else {
+            if (statusSpan) {
+                statusSpan.className = 'code-status status-wait';
+                statusSpan.textContent = '等待中';
+            }
+        }
+    }
+
+    function updateProgressBar(current, total) {
+        const percent = Math.floor((current / total) * 100);
+        const progressBar = document.getElementById('progress-bar');
+        if (progressBar) progressBar.style.width = `${percent}%`;
+        const progressText = document.getElementById('progress-text');
+        if (progressText) progressText.textContent = `正在领取中... ${current}/${total}`;
+    }
+
+    function stopRedeem() {
+        if (isRunning) {
+            stopRequested = true;
+            const stopBtn = document.getElementById('stop-btn');
+            stopBtn.textContent = '正在停止...';
+            stopBtn.disabled = true;
+        }
+    }
+
+    function resetList() {
+        if (isRunning) {
+            showAlert('福利码领取进行中，无法重置列表', '提示');
+            return;
+        }
+        
+        codes = codes.map(item => ({
+            ...item,
+            status: 'wait',
+            result: ''
+        }));
+        
+        codes.forEach((item, idx) => {
+            if (item.LC && item.LC !== '') {
+                lcEnabled[idx] = true;
+            }
+        });
+        
+        renderCodes();
+        updateBadges();
+        updateLCToggleButton();
+        
+        const progressBarContainer = document.getElementById('progress-bar-container');
+        const progressText = document.getElementById('progress-text');
+        const progressBar = document.getElementById('progress-bar');
+        if (progressBarContainer) progressBarContainer.style.display = 'none';
+        if (progressText) progressText.style.display = 'none';
+        if (progressBar) progressBar.style.width = '0%';
+        
+        const stopBtn = document.getElementById('stop-btn');
+        stopBtn.textContent = '停止领取';
+        stopBtn.disabled = false;
+        
+        const hasWaitItems = codes.some((c, idx) => {
+            const isLC = !!(c.LC && c.LC !== '');
+            if (isLC) return lcEnabled[idx];
+            return c.status === 'wait';
+        });
+        if (hasWaitItems && userData.uid) {
+            document.getElementById('start-btn').disabled = false;
+        }
+    }
+
+    async function updateProgressFromServer() {
+        if (!isRunning) return;
+        
+        try {
+            const response = await fetch('/api/progress');
+            const data = await response.json();
+            
+            if (data.code === 200 && data.data.isRunning) {
+                const prog = data.data;
+                updateProgressBar(prog.current, prog.total);
+                
+                document.getElementById('success-badge').textContent = `成功: ${prog.success}`;
+                document.getElementById('fail-badge').textContent = `失败: ${prog.fail}`;
+            }
+        } catch (error) {
+            console.error('获取进度失败', error);
+        }
+    }
+
+    async function loadLogs() {
+        try {
+            const response = await fetch('/api/logs');
+            const data = await response.json();
+            
+            if (data.code === 200 && data.data) {
+                const logElement = document.getElementById('execution-log');
+                if (data.data.length > 0 && !isRunning) {
+                    logElement.textContent = data.data.join('\n');
+                    logElement.scrollTop = logElement.scrollHeight;
+                }
+                document.getElementById('log-entries-count').textContent = data.data.length;
+            }
+        } catch (error) {
+            console.error('加载日志失败', error);
+        }
+    }
+
+    function refreshLogs() {
+        loadLogs();
+    }
+
+    function clearLogDisplay() {
+        document.getElementById('execution-log').textContent = '日志已清空...';
+    }
+
+    document.addEventListener('DOMContentLoaded', async function() {
+        await loadServers();
+        
+        const sessionRestored = await verifyAndRestoreSession();
+        
+        if (!sessionRestored) {
+            await loadCodes();
+        }
+        
+        await loadLogs();
+        
+        progressInterval = setInterval(updateProgressFromServer, 1000);
+        logRefreshInterval = setInterval(loadLogs, 30000);
+    });
+
+    window.addEventListener('beforeunload', function() {
+        if (progressInterval) {
+            clearInterval(progressInterval);
+        }
+        if (loginTimer) {
+            clearInterval(loginTimer);
+        }
+        if (logRefreshInterval) {
+            clearInterval(logRefreshInterval);
+        }
+    });
+</script>
+</body>
+</html>
