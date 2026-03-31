@@ -1,1 +1,9 @@
-{}
+{
+  "a42a0d0efc5143adba3890cf612c7ceb": {
+    "account": "19021246507",
+    "token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1aWQiOjIwMTUyNSwicGFzc3dkIjoiYWJjMTIzNDUifQ.T_KKlwkgRdaLsaZrx5ACG1r1yOt92JhIxWz5zQeOITY",
+    "username": "19021246507",
+    "createdAt": 1774952597932,
+    "expiresAt": 1774953497932
+  }
+}
