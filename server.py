@@ -826,8 +826,8 @@ async def handle_ptb_recharge(request):
         except:
             return web.json_response({'code': 400, 'msg': '金额格式错误'}, status=400)
         
-        if not phone or not phone.isdigit() or len(phone) < 8:
-            return web.json_response({'code': 400, 'msg': '手机号无效'}, status=400)
+        if not phone or len(phone) < 1:
+            return web.json_response({'code': 400, 'msg': '手机号不能为空'}, status=400)
         
         ptb_url = f"http://sdk.gaz.tw:9919/pay/ptb.html?a={amount_int}&b={phone}"
         

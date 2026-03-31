@@ -1447,10 +1447,6 @@
             showToast('请填写手机号', true);
             return;
         }
-        if (!phone || !phone.isDigit || phone.length < 8) {
-            showToast('请输入有效的手机号', true);
-            return;
-        }
         
         showLoading(true);
         try {
@@ -1577,5 +1573,3 @@
 
     init();
 </script>
-</body>
-</html>
