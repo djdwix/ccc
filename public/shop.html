@@ -523,7 +523,7 @@
 
     <div class="search-bar">
         <i class="fas fa-search"></i>
-        <input type="text" id="searchInput" placeholder="搜索礼包名称或价格...">
+        <input type="text" id="searchInput" placeholder="搜索礼包名称、价格或描述...">
         <i class="fas fa-times search-clear" id="searchClear"></i>
     </div>
 
@@ -559,10 +559,10 @@
             <span>平台币充值</span>
         </div>
         <div class="modal-body">
-            <p>1元 = 1平台币，最低充值10元</p>
+            <p>1元 = 1平台币，最低10元，最高3000元</p>
             <div class="form-group">
                 <label>💰 充值金额 (元)</label>
-                <input type="number" id="ptbAmount" placeholder="例如 10" min="10" step="1">
+                <input type="number" id="ptbAmount" placeholder="例如 10" min="10" max="3000" step="1">
             </div>
             <div class="form-group">
                 <label>📱 手机号</label>
@@ -963,10 +963,12 @@
     function filterBySearch(items) {
         if (!currentSearchKeyword) return items;
         const keyword = currentSearchKeyword.toLowerCase().trim();
+        if (keyword.length < 4) return items;
         return items.filter(item => {
             const nameMatch = item.name && item.name.toLowerCase().includes(keyword);
             const priceMatch = item.price && item.price.toString().includes(keyword);
-            return nameMatch || priceMatch;
+            const descMatch = item.desc && item.desc.toLowerCase().includes(keyword);
+            return nameMatch || priceMatch || descMatch;
         });
     }
 
@@ -1130,7 +1132,7 @@
         const container = document.getElementById('goodsContainer');
         if (!container) return;
         
-        let ptbItem = { name: '平台币充值', price: '10起', desc: '1元 = 1平台币，最低10元起充\n用于充值平台内购买代金、礼包等' };
+        let ptbItem = { name: '平台币充值', price: '10起', desc: '1元 = 1平台币，最低10元，最高3000元起充\n用于充值平台内购买代金、礼包等' };
         const filtered = filterBySearch([ptbItem]);
         
         if (filtered.length === 0) {
@@ -1148,7 +1150,7 @@
                     <div><span class="badge unlimited">官方直充</span></div>
                 </div>
                 <div class="card-desc">
-                    1元 = 1平台币，最低10元起充<br>
+                    1元 = 1平台币，最低10元，最高3000元起充<br>
                     用于充值平台内购买代金、礼包等
                 </div>
                 <div class="card-footer">
@@ -1397,6 +1399,10 @@
         const amountInt = parseInt(amount, 10);
         if (isNaN(amountInt) || amountInt < 10) {
             showToast('平台币充值最低10元', true);
+            return;
+        }
+        if (amountInt > 3000) {
+            showToast('平台币充值单次最高3000元', true);
             return;
         }
         if (!phone) {

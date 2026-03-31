@@ -334,7 +334,7 @@
                 </div>
                 <div class="form-group" id="role-info" style="display: none; background-color: #f6ffed; padding: 10px; border-radius: 4px; border: 1px solid #b7eb8f;">
                     <div><strong>角色名:</strong> <span id="role-name" style="color: #52c41a; font-weight: bold;">-</span></div>
-                    <div><strong>等级:</strong> <span id="role-level">-</span> | <strong>UID:</strong> <span id="role-uid">-</span></div>
+                    <div><strong>UID:</strong> <span id="role-uid">-</span></div>
                 </div>
                 <div class="action-bar">
                     <button class="btn btn-danger" id="logout-btn" onclick="handleLogout()" disabled>退出登录</button>
@@ -690,12 +690,10 @@
         
         const roleInfoDiv = document.getElementById('role-info');
         const roleNameSpan = document.getElementById('role-name');
-        const roleLevelSpan = document.getElementById('role-level');
         const roleUidSpan = document.getElementById('role-uid');
         
         roleInfoDiv.style.display = 'block';
         roleNameSpan.textContent = '获取中...';
-        roleLevelSpan.textContent = '-';
         roleUidSpan.textContent = '-';
         
         try {
@@ -710,30 +708,15 @@
                 roleNameSpan.textContent = userData.roleName;
                 roleUidSpan.textContent = userData.uid || '-';
                 
-                try {
-                    const profileRes = await fetch(`/api/profile?token=${encodeURIComponent(userData.token)}&sid=${userData.sid}`);
-                    const profileData = await profileRes.json();
-                    
-                    if (profileData.code === 200 && profileData.data) {
-                        roleLevelSpan.textContent = profileData.data.level || profileData.data.grade || '-';
-                    } else {
-                        roleLevelSpan.textContent = role.level || role.grade || '-';
-                    }
-                } catch (profileError) {
-                    roleLevelSpan.textContent = role.level || role.grade || '-';
-                }
-                
                 document.getElementById('start-btn').disabled = false;
                 await loadLogs();
             } else if (data.code === 404 || (data.code === 200 && (!data.data || data.data.length === 0))) {
                 roleNameSpan.textContent = '未在该区服创建角色';
-                roleLevelSpan.textContent = '-';
                 roleUidSpan.textContent = '-';
                 document.getElementById('start-btn').disabled = true;
                 showAlert('获取角色信息失败或该区服无角色，请先进入游戏创建角色！', '提示');
             } else {
                 roleNameSpan.textContent = '获取角色失败';
-                roleLevelSpan.textContent = '-';
                 roleUidSpan.textContent = '-';
                 document.getElementById('start-btn').disabled = true;
                 showAlert(data.msg || '获取角色信息失败，请检查网络或稍后重试', '提示');
@@ -741,7 +724,6 @@
         } catch (error) {
             console.error('获取角色信息失败:', error);
             roleNameSpan.textContent = '网络错误';
-            roleLevelSpan.textContent = '-';
             roleUidSpan.textContent = '-';
             document.getElementById('start-btn').disabled = true;
             showAlert('网络错误，获取角色信息失败，请检查网络连接', '错误');

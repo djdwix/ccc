@@ -745,6 +745,8 @@ async def handle_ptb_recharge(request):
             amount_int = int(amount)
             if amount_int < 10:
                 return web.json_response({'code': 400, 'msg': '平台币充值最低10元'}, status=400)
+            if amount_int > 3000:
+                return web.json_response({'code': 400, 'msg': '平台币充值单次最高3000元'}, status=400)
         except:
             return web.json_response({'code': 400, 'msg': '金额格式错误'}, status=400)
         
