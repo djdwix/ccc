@@ -241,7 +241,7 @@ def record_account_login_fail(account):
         record = records[account]
         record['failCount'] += 1
         record['lastFailTime'] = now
-        if record['failCount'] >= 1:
+        if record['failCount'] >= 2:
             lock_time = get_random_lock_time()
             record['lockedUntil'] = now + lock_time
     data['records'] = records

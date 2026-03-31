@@ -267,30 +267,17 @@
             font-size: 13px;
             color: #614d0c;
         }
-        .lc-checkbox {
-            margin-left: 10px;
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-            font-size: 12px;
-            font-weight: normal;
-        }
-        .lc-checkbox input {
-            width: 16px;
-            height: 16px;
-            cursor: pointer;
-        }
-        .code-info {
-            display: flex;
-            flex-direction: column;
+        .shop-entry {
+            text-align: right;
+            margin-bottom: 10px;
         }
         .code-type {
             font-size: 11px;
             color: #888;
         }
-        .shop-entry {
-            text-align: right;
-            margin-bottom: 10px;
+        .code-info {
+            display: flex;
+            flex-direction: column;
         }
     </style>
 </head>
@@ -346,7 +333,7 @@
 
         <div class="section">
             <div class="section-title">
-                2. 福利码列表
+                2. CDK码列表
                 <div>
                     <span class="badge badge-info" id="total-badge">总计: 0</span>
                     <span class="badge badge-success" id="success-badge">成功: 0</span>
@@ -357,7 +344,6 @@
                 <button class="btn btn-success" id="start-btn" onclick="startRedeemAll()" disabled>一键领取全部</button>
                 <button class="btn btn-danger" id="stop-btn" onclick="stopRedeem()" style="display: none;">停止领取</button>
                 <button class="btn" id="reset-btn" onclick="resetList()" style="background-color: #8c8c8c; color: white;">重置列表状态</button>
-                <button class="btn" id="toggle-lc-btn" onclick="toggleAllLC()" style="background-color: #722ed1; color: white;">全部LC: 全选</button>
             </div>
             
             <div class="progress-text" id="progress-text" style="display: none;">准备中 0/0</div>
@@ -366,7 +352,7 @@
             </div>
             
             <div class="code-list" id="code-list-container">
-                <div style="padding: 20px; text-align: center; color: #999;">正在加载福利码...</div>
+                <div style="padding: 20px; text-align: center; color: #999;">正在加载CDK...</div>
             </div>
         </div>
     </div>
@@ -409,7 +395,6 @@
     };
     
     let codes = [];
-    let lcEnabled = {};
     let isRunning = false;
     let stopRequested = false;
     let loginTimer = null;
@@ -510,88 +495,23 @@
             const data = await response.json();
             
             if (data.code === 200) {
-                codes = data.data.map(item => ({
+                codes = data.data.filter(item => !item.LC || item.LC === '').map(item => ({
                     ...item,
                     status: 'wait',
                     result: ''
                 }));
-                lcEnabled = {};
-                codes.forEach((item, idx) => {
-                    if (item.LC && item.LC !== '') {
-                        lcEnabled[idx] = true;
-                    }
-                });
                 renderCodes();
                 updateBadges();
-                updateLCToggleButton();
             }
         } catch (error) {
-            showAlert('加载福利码失败', '错误');
+            showAlert('加载CDK失败', '错误');
         }
-    }
-
-    function toggleLC(index) {
-        if (isRunning) {
-            showAlert('福利码领取进行中，无法修改选择', '提示');
-            return;
-        }
-        if (codes[index] && codes[index].LC && codes[index].LC !== '') {
-            lcEnabled[index] = !lcEnabled[index];
-            renderCodes();
-            updateLCToggleButton();
-        }
-    }
-
-    function toggleAllLC() {
-        if (isRunning) {
-            showAlert('福利码领取进行中，无法修改选择', '提示');
-            return;
-        }
-        
-        const lcIndices = [];
-        codes.forEach((item, idx) => {
-            if (item.LC && item.LC !== '') {
-                lcIndices.push(idx);
-            }
-        });
-        
-        if (lcIndices.length === 0) return;
-        
-        const allSelected = lcIndices.every(idx => lcEnabled[idx] === true);
-        
-        lcIndices.forEach(idx => {
-            lcEnabled[idx] = !allSelected;
-        });
-        
-        renderCodes();
-        updateLCToggleButton();
-    }
-
-    function updateLCToggleButton() {
-        const btn = document.getElementById('toggle-lc-btn');
-        if (!btn) return;
-        
-        const lcIndices = codes.filter((item, idx) => item.LC && item.LC !== '');
-        if (lcIndices.length === 0) {
-            btn.style.display = 'none';
-            return;
-        }
-        
-        btn.style.display = 'inline-block';
-        const allSelected = codes.every((item, idx) => {
-            if (item.LC && item.LC !== '') {
-                return lcEnabled[idx] === true;
-            }
-            return true;
-        });
-        
-        btn.textContent = allSelected ? '全部LC: 全不选' : '全部LC: 全选';
     }
 
     function renderCodes() {
         const container = document.getElementById('code-list-container');
         if (codes.length === 0) {
-            container.innerHTML = '<div style="padding: 20px; text-align: center; color: #999;">暂无福利码</div>';
+            container.innerHTML = '<div style="padding: 20px; text-align: center; color: #999;">暂无CDK</div>';
             return;
         }
 
@@ -600,9 +520,6 @@
             const div = document.createElement('div');
             div.className = `code-item code-${item.status}`;
             div.id = `code-item-${index}`;
-            
-            const isLC = !!(item.LC && item.LC !== '');
-            const typeText = isLC ? `[礼包LC:${item.LC}]` : '[CDK码]';
             
             let statusClass = 'status-wait';
             let statusText = '等待中';
@@ -618,30 +535,12 @@
                 statusText = '领取中...';
             }
 
-            let lcCheckboxHtml = '';
-            if (isLC && item.status === 'wait' && !isRunning) {
-                lcCheckboxHtml = `
-                    <label class="lc-checkbox">
-                        <input type="checkbox" ${lcEnabled[index] ? 'checked' : ''} onchange="toggleLC(${index})">
-                        <span style="font-size: 11px;">领取此LC</span>
-                    </label>
-                `;
-            } else if (isLC && item.status !== 'wait') {
-                lcCheckboxHtml = `<span style="font-size: 11px; color: #888; margin-left: 10px;">已${item.status === 'success' ? '领取' : '跳过'}</span>`;
-            } else if (isLC && isRunning && item.status === 'wait') {
-                lcCheckboxHtml = `<span style="font-size: 11px; color: #888; margin-left: 10px;">${lcEnabled[index] ? '等待领取' : '已跳过'}</span>`;
-            }
-
             div.innerHTML = `
                 <div class="code-info">
                     <div>
-                        <span style="color: #888; font-size: 12px;">${typeText}</span>
                         <span class="code-key">${item.key}</span>
-                        ${lcCheckboxHtml}
                     </div>
-                    <div class="code-type" style="font-size: 11px; color: #aaa;">
-                        ${isLC ? 'LC礼包码（累充礼包）' : 'CDK兑换码'}
-                    </div>
+                    <div class="code-type" style="font-size: 11px; color: #aaa;">CDK兑换码</div>
                     <div style="font-size: 12px; color: #666;" id="code-result-${index}">${item.result || ''}</div>
                 </div>
                 <span class="code-status ${statusClass}" id="code-status-${index}">${statusText}</span>
@@ -661,7 +560,7 @@
 
     async function handleLogin() {
         if (isRunning) {
-            showAlert('福利码领取进行中，请先停止或等待完成后再登录', '提示');
+            showAlert('CDK领取进行中，请先停止或等待完成后再登录', '提示');
             return;
         }
         
@@ -723,7 +622,7 @@
 
     async function handleLogout() {
         if (isRunning) {
-            showAlert('福利码领取进行中，请先停止后再退出登录', '提示');
+            showAlert('CDK领取进行中，请先停止后再退出登录', '提示');
             return;
         }
         
@@ -753,7 +652,7 @@
 
     async function handleServerChange() {
         if (isRunning) {
-            showAlert('福利码领取进行中，无法切换区服', '提示');
+            showAlert('CDK领取进行中，无法切换区服', '提示');
             const select = document.getElementById('server-select');
             select.value = userData.sid || '';
             return;
@@ -834,50 +733,6 @@
         }
     }
 
-    async function redeemSingleLC(index, lcCode, attachedCdk) {
-        try {
-            const lcRes = await fetch('/api/redeem-lc', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    token: userData.token,
-                    sid: userData.sid,
-                    packid: lcCode
-                })
-            });
-            const lcData = await lcRes.json();
-            
-            if (lcData.code !== 200) {
-                return { success: false, msg: lcData.msg || 'LC领取失败' };
-            }
-            
-            if (attachedCdk && attachedCdk.key && attachedCdk.key.trim() !== '') {
-                await new Promise(resolve => setTimeout(resolve, 500));
-                
-                const cdkRes = await fetch('/api/redeem-cdk', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        token: userData.token,
-                        sid: userData.sid,
-                        cdk: attachedCdk.key,
-                        uid: userData.uid
-                    })
-                });
-                const cdkData = await cdkRes.json();
-                
-                if (cdkData.code !== 200) {
-                    return { success: false, msg: `LC领取成功，但附带CDK(${attachedCdk.key})领取失败: ${cdkData.msg || '未知错误'}` };
-                }
-                return { success: true, msg: `LC和附带CDK(${attachedCdk.key})均已领取成功` };
-            }
-            
-            return { success: true, msg: lcData.msg || 'LC领取成功' };
-        } catch (error) {
-            return { success: false, msg: error.message };
-        }
-    }
-
     async function redeemSingleCDK(index, cdkCode) {
         try {
             const response = await fetch('/api/redeem-cdk', {
@@ -906,16 +761,11 @@
         const itemsToProcess = [];
         for (let i = 0; i < codes.length; i++) {
             if (codes[i].status !== 'wait') continue;
-            
-            const isLC = !!(codes[i].LC && codes[i].LC !== '');
-            if (isLC && !lcEnabled[i]) {
-                continue;
-            }
-            itemsToProcess.push({ index: i, item: codes[i], isLC });
+            itemsToProcess.push({ index: i, item: codes[i] });
         }
         
         if (itemsToProcess.length === 0) {
-            showAlert('没有等待领取的福利码，请重置列表或勾选LC礼包码');
+            showAlert('没有等待领取的CDK，请重置列表');
             return;
         }
 
@@ -926,7 +776,6 @@
         document.getElementById('stop-btn').style.display = 'inline-block';
         document.getElementById('reset-btn').disabled = true;
         document.getElementById('server-select').disabled = true;
-        document.getElementById('toggle-lc-btn').disabled = true;
         document.getElementById('logout-btn').disabled = true;
         document.getElementById('refresh-role-btn').disabled = true;
         
@@ -953,7 +802,6 @@
             
             const index = item.index;
             const codeItem = item.item;
-            const isLCItem = item.isLC;
             
             processedCount++;
             updateItemStatus(index, 'running', '领取中...');
@@ -964,13 +812,7 @@
                 body: JSON.stringify({ current: processedCount })
             });
 
-            let result;
-            if (isLCItem) {
-                const attachedCdk = codes.find(c => c.key === codeItem.key && !c.LC);
-                result = await redeemSingleLC(index, codeItem.LC, attachedCdk);
-            } else {
-                result = await redeemSingleCDK(index, codeItem.key);
-            }
+            const result = await redeemSingleCDK(index, codeItem.key);
             
             if (result.success) {
                 codes[index].status = 'success';
@@ -1000,7 +842,6 @@
         document.getElementById('stop-btn').style.display = 'none';
         document.getElementById('reset-btn').disabled = false;
         document.getElementById('server-select').disabled = false;
-        document.getElementById('toggle-lc-btn').disabled = false;
         document.getElementById('logout-btn').disabled = false;
         document.getElementById('refresh-role-btn').disabled = false;
         
@@ -1009,7 +850,7 @@
         if (stopRequested) {
             showAlert('批量领取已手动停止', '提示');
         } else {
-            showAlert('全部福利码已处理完毕！', '完成');
+            showAlert('全部CDK已处理完毕！', '完成');
         }
         
         await loadLogs();
@@ -1070,7 +911,7 @@
 
     function resetList() {
         if (isRunning) {
-            showAlert('福利码领取进行中，无法重置列表', '提示');
+            showAlert('CDK领取进行中，无法重置列表', '提示');
             return;
         }
         
@@ -1080,15 +921,8 @@
             result: ''
         }));
         
-        codes.forEach((item, idx) => {
-            if (item.LC && item.LC !== '') {
-                lcEnabled[idx] = true;
-            }
-        });
-        
         renderCodes();
         updateBadges();
-        updateLCToggleButton();
         
         const progressBarContainer = document.getElementById('progress-bar-container');
         const progressText = document.getElementById('progress-text');
@@ -1101,11 +935,7 @@
         stopBtn.textContent = '停止领取';
         stopBtn.disabled = false;
         
-        const hasWaitItems = codes.some((c, idx) => {
-            const isLC = !!(c.LC && c.LC !== '');
-            if (isLC) return lcEnabled[idx];
-            return c.status === 'wait';
-        });
+        const hasWaitItems = codes.some(c => c.status === 'wait');
         if (hasWaitItems && userData.uid) {
             document.getElementById('start-btn').disabled = false;
         }
