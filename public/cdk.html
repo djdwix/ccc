@@ -279,6 +279,15 @@
             display: flex;
             flex-direction: column;
         }
+        .limited-tag {
+            background-color: #ff9800;
+            color: white;
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 10px;
+            margin-left: 8px;
+            display: inline-block;
+        }
     </style>
 </head>
 <body>
@@ -290,6 +299,9 @@
 
     <div class="tips" id="global-tips">
         系统提示：本工具支持自动检测福利码类型（CDK），一键自动批量领取。累充礼包在商城领取，会话有效期为15分钟，过期需重新登录。福利码领取期间禁止退出登录和切换区服。若界面提示响应格式错误则主服务器正在维护
+        <div style="margin-top: 5px; color: #ff9800;">
+            ⏰ 限时福利码：<strong>bf0331</strong>（有效期至2026年4月15日）
+        </div>
         <div class="shop-entry" style="margin-top: 8px;">
             <a href="/shop.html" target="_blank" class="btn btn-shop" style="padding: 5px 15px; font-size: 12px;">🎁 前往礼包商城</a>
         </div>
@@ -535,10 +547,13 @@
                 statusText = '领取中...';
             }
 
+            const isLimited = item.key === 'bf0331';
+            const limitedHtml = isLimited ? '<span class="limited-tag">限时</span>' : '';
+
             div.innerHTML = `
                 <div class="code-info">
                     <div>
-                        <span class="code-key">${item.key}</span>
+                        <span class="code-key">${item.key}</span>${limitedHtml}
                     </div>
                     <div class="code-type" style="font-size: 11px; color: #aaa;">CDK兑换码</div>
                     <div style="font-size: 12px; color: #666;" id="code-result-${index}">${item.result || ''}</div>

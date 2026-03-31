@@ -46,7 +46,8 @@ codesData = [
     {"LC":"","key":"bc1007"},
     {"LC":"","key":"vip1205"},{"LC":"","key":"wn1223"},
     {"LC":"","key":"vip0122"},{"LC":"","key":"wn2026"},
-    {"LC":"","key":"yx0303"}
+    {"LC":"","key":"yx0303"},
+    {"LC":"","key":"bf0331"}
 ]
 
 serverList = [

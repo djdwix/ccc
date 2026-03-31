@@ -81,7 +81,7 @@
         .tab-bar {
             display: flex;
             gap: 12px;
-            margin-bottom: 28px;
+            margin-bottom: 20px;
             border-bottom: 1px solid rgba(255,255,255,0.1);
             padding-bottom: 12px;
             flex-wrap: wrap;
@@ -104,6 +104,47 @@
             background: linear-gradient(135deg, #FFD700, #FFA500);
             color: #0a0e1a;
             box-shadow: 0 4px 12px rgba(255,165,0,0.3);
+        }
+
+        .search-bar {
+            margin-bottom: 20px;
+            position: relative;
+        }
+        .search-bar input {
+            width: 100%;
+            padding: 12px 20px;
+            padding-left: 45px;
+            border-radius: 50px;
+            border: 1px solid rgba(255,255,255,0.2);
+            background: rgba(22, 32, 55, 0.6);
+            color: #fff;
+            font-size: 14px;
+            outline: none;
+            transition: all 0.3s;
+        }
+        .search-bar input:focus {
+            border-color: #FFD700;
+            background: rgba(22, 32, 55, 0.9);
+        }
+        .search-bar i {
+            position: absolute;
+            left: 18px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #8e9aaf;
+            font-size: 16px;
+        }
+        .search-clear {
+            position: absolute;
+            right: 18px;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+            color: #8e9aaf;
+            display: none;
+        }
+        .search-clear:hover {
+            color: #FFD700;
         }
 
         .goods-grid {
@@ -415,6 +456,13 @@
             font-size: 1.1rem;
         }
 
+        .no-results {
+            text-align: center;
+            padding: 60px;
+            color: #8e9aaf;
+            font-size: 1.1rem;
+        }
+
         @media (max-width: 680px) {
             body {
                 padding: 12px;
@@ -471,6 +519,12 @@
         <button class="tab-btn" data-type="voucher">💎 代钞专区</button>
         <button class="tab-btn" data-type="accumulate">🏆 累充豪礼</button>
         <button class="tab-btn" data-type="ptb">🪙 平台币充值</button>
+    </div>
+
+    <div class="search-bar">
+        <i class="fas fa-search"></i>
+        <input type="text" id="searchInput" placeholder="搜索礼包名称或价格...">
+        <i class="fas fa-times search-clear" id="searchClear"></i>
     </div>
 
     <div id="goodsContainer" class="goods-grid"></div>
@@ -537,6 +591,8 @@
     let currentSelectedPack = null;
     let currentRoleSid = null;
     let currentRoleUid = null;
+    let currentType = 'all';
+    let currentSearchKeyword = '';
 
     const STORAGE_KEY = 'game_mall_session';
 
@@ -904,7 +960,19 @@
         return `<span class="badge limited">剩余${remaining}次</span>`;
     }
 
+    function filterBySearch(items) {
+        if (!currentSearchKeyword) return items;
+        const keyword = currentSearchKeyword.toLowerCase().trim();
+        return items.filter(item => {
+            const nameMatch = item.name && item.name.toLowerCase().includes(keyword);
+            const priceMatch = item.price && item.price.toString().includes(keyword);
+            return nameMatch || priceMatch;
+        });
+    }
+
     function renderItems(type) {
+        currentType = type;
+        
         if (type === 'ptb') {
             renderPtbCard();
             return;
@@ -919,12 +987,14 @@
         if (type === 'all') filtered = [...shopItems];
         else filtered = shopItems.filter(item => item.type === type);
         
+        filtered = filterBySearch(filtered);
+        
         const container = document.getElementById('goodsContainer');
         if (!container) return;
         container.innerHTML = '';
         
         if (filtered.length === 0) {
-            container.innerHTML = '<div style="text-align: center; padding: 40px; color: #8e9aaf;">暂无商品</div>';
+            container.innerHTML = '<div class="no-results"><i class="fas fa-search" style="font-size: 3rem; margin-bottom: 15px; opacity: 0.5;"></i><br>没有找到相关商品</div>';
             return;
         }
         
@@ -975,12 +1045,18 @@
     }
 
     function renderAccumulatePacks() {
+        let packs = [...accumulatePacks];
+        packs = filterBySearch(packs.map(p => ({ ...p, price: p.needpay, name: p.name }))).map(p => {
+            const original = accumulatePacks.find(op => op.id === p.id);
+            return original || p;
+        });
+        
         const container = document.getElementById('goodsContainer');
         if (!container) return;
         container.innerHTML = '';
         
-        if (accumulatePacks.length === 0) {
-            container.innerHTML = '<div style="text-align: center; padding: 40px; color: #8e9aaf;">暂无累充礼包</div>';
+        if (packs.length === 0) {
+            container.innerHTML = '<div class="no-results"><i class="fas fa-search" style="font-size: 3rem; margin-bottom: 15px; opacity: 0.5;"></i><br>没有找到相关礼包</div>';
             return;
         }
         
@@ -994,7 +1070,7 @@
         const gridDiv = document.createElement('div');
         gridDiv.className = 'goods-grid';
         
-        accumulatePacks.forEach(pack => {
+        packs.forEach(pack => {
             const card = document.createElement('div');
             card.className = 'card accumulate-card';
             const canClaim = pack.can_claim && !pack.claimed;
@@ -1053,6 +1129,15 @@
     function renderPtbCard() {
         const container = document.getElementById('goodsContainer');
         if (!container) return;
+        
+        let ptbItem = { name: '平台币充值', price: '10起', desc: '1元 = 1平台币，最低10元起充\n用于游戏内购买道具、礼包等' };
+        const filtered = filterBySearch([ptbItem]);
+        
+        if (filtered.length === 0) {
+            container.innerHTML = '<div class="no-results"><i class="fas fa-search" style="font-size: 3rem; margin-bottom: 15px; opacity: 0.5;"></i><br>没有找到相关商品</div>';
+            return;
+        }
+        
         container.innerHTML = `
             <div class="card ptb-card" style="cursor: pointer;" id="ptbSpecialCard">
                 <div class="card-header">
@@ -1117,7 +1202,7 @@
             else if (item.interval === 999) msg = '该商品永久限购次数已达上限';
             else msg = '该商品购买次数已达上限';
             showToast(msg, true);
-            renderItems(document.querySelector('.tab-btn.active')?.getAttribute('data-type') || 'all');
+            renderItems(currentType);
             return;
         }
         
@@ -1207,7 +1292,7 @@
         const limitCheck = checkPurchaseLimit(item, account);
         if (!limitCheck.allowed) {
             showToast('购买次数已达上限', true);
-            renderItems(document.querySelector('.tab-btn.active')?.getAttribute('data-type') || 'all');
+            renderItems(currentType);
             return false;
         }
         
@@ -1242,7 +1327,7 @@
                 recordPurchase(item, account);
                 window.open(paymentRes.data.payment_url, '_blank');
                 showToast(`已打开支付窗口，请完成支付`, false);
-                renderItems(document.querySelector('.tab-btn.active')?.getAttribute('data-type') || 'all');
+                renderItems(currentType);
                 return true;
             } else {
                 showToast(`获取支付链接失败: ${paymentRes.msg || '未知错误'}`, true);
@@ -1396,6 +1481,26 @@
             const type = btn.getAttribute('data-type');
             renderItems(type);
         });
+    });
+
+    const searchInput = document.getElementById('searchInput');
+    const searchClear = document.getElementById('searchClear');
+    
+    searchInput.addEventListener('input', (e) => {
+        currentSearchKeyword = e.target.value;
+        if (currentSearchKeyword) {
+            searchClear.style.display = 'block';
+        } else {
+            searchClear.style.display = 'none';
+        }
+        renderItems(currentType);
+    });
+    
+    searchClear.addEventListener('click', () => {
+        searchInput.value = '';
+        currentSearchKeyword = '';
+        searchClear.style.display = 'none';
+        renderItems(currentType);
     });
 
     async function init() {
