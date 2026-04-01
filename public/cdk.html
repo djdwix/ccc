@@ -30,12 +30,28 @@
             margin-bottom: 20px;
             border-radius: 8px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        .header-logo {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .header-logo img {
+            max-height: 60px;
+            width: auto;
+            border-radius: 8px;
         }
         h1 {
             text-align: center;
             color: #333;
             font-size: 24px;
             font-weight: bold;
+            margin: 0;
         }
         footer {
             text-align: center;
@@ -307,13 +323,26 @@
             font-weight: bold;
             color: #d32f2f;
         }
+        @media (max-width: 768px) {
+            header {
+                flex-direction: column;
+                text-align: center;
+            }
+            .header-logo {
+                justify-content: center;
+            }
+        }
     </style>
 </head>
 <body>
 
 <div class="container">
     <header>
+        <div class="header-logo">
+            <img src="desk/zqwn.png" alt="最强蜗牛" onerror="this.style.display='none'">
+        </div>
         <h1>蜗牛BT-CDK批量领取工具</h1>
+        <div style="width: 60px;"></div>
     </header>
 
     <div class="entry-buttons">
@@ -726,7 +755,6 @@
             console.error('登出请求失败', error);
         }
         
-        userData = { token: '', username: '', account: '', sid: '', roleName: '', uid: '' };
         if (loginTimer) clearInterval(loginTimer);
         
         document.getElementById('login-form').style.display = 'block';
@@ -740,6 +768,8 @@
         
         document.getElementById('account').value = '';
         document.getElementById('password').value = '';
+        
+        userData = { token: '', username: '', account: '', sid: '', roleName: '', uid: '' };
         
         showAlert('已退出登录');
     }
