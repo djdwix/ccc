@@ -302,23 +302,9 @@
             transform: none;
         }
 
-        .buy-btn.disabled:hover {
-            transform: none;
-            box-shadow: none;
-        }
-
         .ptb-card {
             background: linear-gradient(135deg, rgba(34, 197, 94, 0.2), rgba(16, 185, 129, 0.1));
             border: 1px solid rgba(34, 197, 94, 0.4);
-        }
-
-        .ptb-card .price {
-            color: #4ade80;
-        }
-
-        .accumulate-card {
-            background: linear-gradient(135deg, rgba(168, 85, 247, 0.2), rgba(139, 92, 246, 0.1));
-            border: 1px solid rgba(168, 85, 247, 0.4);
         }
 
         .modal {
@@ -455,19 +441,6 @@
             outline: none;
         }
 
-        .user-total {
-            background: rgba(0,0,0,0.3);
-            padding: 8px 16px;
-            border-radius: 40px;
-            font-size: 0.9rem;
-        }
-
-        .user-total span {
-            color: #FFD966;
-            font-weight: bold;
-            font-size: 1.1rem;
-        }
-
         .no-results {
             text-align: center;
             padding: 60px;
@@ -500,12 +473,25 @@
         .cdk-return a:hover {
             text-decoration: underline;
         }
+        .lc-link {
+            margin-left: 15px;
+            display: inline-block;
+        }
+        .lc-link a {
+            color: #a855f7;
+            text-decoration: none;
+            font-size: 14px;
+        }
+        .lc-link a:hover {
+            text-decoration: underline;
+        }
     </style>
 </head>
 <body>
 <div class="container">
     <div class="cdk-return">
         <a href="/" target="_blank">← 返回CDK领取工具</a>
+        <span class="lc-link"><a href="/LC.html" target="_blank">🏆 累充豪礼入口</a></span>
     </div>
     <div class="header">
         <div class="logo">
@@ -528,7 +514,6 @@
         <button class="tab-btn active" data-type="all">🔥 全部商品</button>
         <button class="tab-btn" data-type="pack">🎁 限时礼包</button>
         <button class="tab-btn" data-type="weekcard">📅 特权周卡</button>
-        <button class="tab-btn" data-type="accumulate">🏆 累充豪礼</button>
         <button class="tab-btn" data-type="ptb">🪙 平台币充值</button>
     </div>
 
@@ -549,17 +534,6 @@
         <div class="modal-buttons">
             <button class="modal-btn cancel-btn" id="closeModalBtn">取消</button>
             <button class="modal-btn confirm-btn" id="confirmBuyBtn">立即购买</button>
-        </div>
-    </div>
-</div>
-
-<div id="accumulateModal" class="modal">
-    <div class="modal-content">
-        <div class="modal-header" id="accumulateModalIcon"></div>
-        <div class="modal-body" id="accumulateModalDesc"></div>
-        <div class="modal-buttons">
-            <button class="modal-btn cancel-btn" id="closeAccumulateModalBtn">取消</button>
-            <button class="modal-btn confirm-btn" id="confirmClaimBtn">立即领取</button>
         </div>
     </div>
 </div>
@@ -595,12 +569,9 @@
 
 <script>
     let shopItems = [];
-    let accumulatePacks = [];
     let userTotalPay = 0;
-    let currentUser = null;
     let currentSession = null;
     let currentSelectedItem = null;
-    let currentSelectedPack = null;
     let currentRoleSid = null;
     let currentRoleUid = null;
     let currentType = 'all';
@@ -809,32 +780,6 @@
         }
     }
 
-    async function fetchAccumulatePacks() {
-    if (!currentSession?.token || !currentRoleSid) {
-        accumulatePacks = [];
-        userTotalPay = 0;
-        document.getElementById('totalRecharge').innerText = '0';
-        return;
-    }
-    
-    try {
-        const res = await apiRequest(`/api/accumulate-packs?token=${encodeURIComponent(currentSession.token)}&sid=${currentRoleSid}`);
-        console.log('累充礼包响应:', res);
-        if (res.code === 200) {
-            accumulatePacks = res.data.packs || [];
-            userTotalPay = res.data.user_total || 0;
-            document.getElementById('totalRecharge').innerText = userTotalPay.toLocaleString();
-            console.log('累充礼包数量:', accumulatePacks.length);
-        } else {
-            accumulatePacks = [];
-            console.error('获取累充礼包失败:', res.msg);
-        }
-    } catch(e) {
-        console.warn('获取累充礼包失败', e);
-        accumulatePacks = [];
-    }
-}
-
     async function verifyOrLogin() {
         const stored = getSessionFromStorage();
         if (stored && stored.sessionId) {
@@ -861,10 +806,8 @@
                     const hasRole = await fetchRoleInfo();
                     if (hasRole) {
                         await fetchUserProfile();
-                        await fetchAccumulatePacks();
                         return true;
                     }
-                    await fetchAccumulatePacks();
                     return true;
                 }
             } catch(e) {}
@@ -894,10 +837,8 @@
                 const hasRole = await fetchRoleInfo();
                 if (hasRole) {
                     await fetchUserProfile();
-                    await fetchAccumulatePacks();
                     return true;
                 }
-                await fetchAccumulatePacks();
                 return true;
             } else {
                 showToast('自动登录失败，请刷新重试', true);
@@ -943,20 +884,6 @@
         }
     }
 
-    function getLimitText(item) {
-        if (item.limit === -1) return '<span class="badge unlimited">无限次</span>';
-        
-        let limitInfo = '';
-        if (item.interval === 1) limitInfo = '每日';
-        else if (item.interval === 7) limitInfo = '每周';
-        else if (item.interval === 999) limitInfo = '永久';
-        
-        if (limitInfo) {
-            return `<span class="badge limited">${limitInfo}限购${item.limit}次</span>`;
-        }
-        return `<span class="badge limited">限购${item.limit}次</span>`;
-    }
-
     function getRemainingText(item, remaining) {
         if (item.limit === -1) return '';
         if (remaining === 0) return '<span class="badge limited">已售罄</span>';
@@ -990,11 +917,6 @@
         
         if (type === 'ptb') {
             renderPtbCard();
-            return;
-        }
-        
-        if (type === 'accumulate') {
-            renderAccumulatePacks();
             return;
         }
         
@@ -1058,102 +980,6 @@
             }
             container.appendChild(card);
         });
-    }
-
-    function renderAccumulatePacks() {
-        let packs = [...accumulatePacks];
-        let filteredPacks = packs;
-        
-        if (currentSearchKeyword && currentSearchKeyword.length >= 2) {
-            const keyword = currentSearchKeyword.toLowerCase().trim();
-            filteredPacks = packs.filter(pack => {
-                const nameMatch = pack.name && pack.name.toLowerCase().includes(keyword);
-                const needpayMatch = pack.needpay && pack.needpay.toString().includes(keyword);
-                const descMatch = (pack.desc && pack.desc.toLowerCase().includes(keyword)) || 
-                                   (pack.rewards && Array.isArray(pack.rewards) && pack.rewards.some(r => 
-                                       (r.name && r.name.toLowerCase().includes(keyword)) || 
-                                       (r.item && r.item.toLowerCase().includes(keyword))
-                                   ));
-                return nameMatch || needpayMatch || descMatch;
-            });
-        } else {
-            filteredPacks = packs;
-        }
-        
-        const container = document.getElementById('goodsContainer');
-        if (!container) return;
-        container.innerHTML = '';
-        
-        if (filteredPacks.length === 0) {
-            const searchHint = currentSearchKeyword && currentSearchKeyword.length >= 2 ? `没有找到与"${escapeHtml(currentSearchKeyword)}"相关的礼包` : '暂无累充礼包';
-            container.innerHTML = `<div class="no-results"><i class="fas fa-search" style="font-size: 3rem; margin-bottom: 15px; opacity: 0.5;"></i><br>${searchHint}</div>`;
-            return;
-        }
-        
-        const headerDiv = document.createElement('div');
-        headerDiv.className = 'user-total';
-        headerDiv.style.marginBottom = '20px';
-        headerDiv.style.textAlign = 'center';
-        headerDiv.innerHTML = `🎯 当前累计充值金额: <span>${userTotalPay.toLocaleString()}</span> 元`;
-        container.appendChild(headerDiv);
-        
-        const gridDiv = document.createElement('div');
-        gridDiv.className = 'goods-grid';
-        
-        filteredPacks.forEach(pack => {
-            const card = document.createElement('div');
-            card.className = 'card accumulate-card';
-            const canClaim = pack.can_claim && !pack.claimed;
-            const claimed = pack.claimed;
-            
-            let statusBadge = '';
-            if (claimed) {
-                statusBadge = '<span class="badge claimed">已领取</span>';
-            } else if (pack.can_claim) {
-                statusBadge = '<span class="badge can-claim">可领取</span>';
-            } else {
-                statusBadge = `<span class="badge limited">需充值${pack.needpay}元</span>`;
-            }
-            
-            const iconColor = pack.iconcolor || 'text-purple';
-            const iconHtml = `<i class="${pack.icon || 'fa-trophy'} ${iconColor}"></i>`;
-            
-            let rewardText = '';
-            if (pack.rewards && Array.isArray(pack.rewards)) {
-                rewardText = pack.rewards.map(r => r.name || r.item).slice(0, 3).join(', ');
-                if (pack.rewards.length > 3) rewardText += '...';
-            } else if (pack.desc) {
-                rewardText = pack.desc.substring(0, 80);
-            }
-            
-            card.innerHTML = `
-                <div class="card-header">
-                    <div class="card-name">
-                        ${iconHtml}
-                        <span>${escapeHtml(pack.name)}</span>
-                    </div>
-                    <div>${statusBadge}</div>
-                </div>
-                <div class="card-desc">${escapeHtml(rewardText || pack.desc || '无描述')}</div>
-                <div class="card-footer">
-                    <div class="price"><small>累计</small> ${pack.needpay}<small>元</small></div>
-                    <button class="buy-btn ${claimed ? 'disabled' : ''}" data-id="${pack.id}" ${claimed ? 'disabled' : ''}>${claimed ? '已领取' : (canClaim ? '立即领取' : '未达标')}</button>
-                </div>
-            `;
-            const btn = card.querySelector('.buy-btn');
-            if (!claimed) {
-                btn.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    if (canClaim) {
-                        openAccumulateModal(pack);
-                    } else {
-                        showToast(`累计充值不足，需要累计充值${pack.needpay}元，当前累计充值${userTotalPay}元`, true);
-                    }
-                });
-            }
-            gridDiv.appendChild(card);
-        });
-        container.appendChild(gridDiv);
     }
 
     function renderPtbCard() {
@@ -1274,36 +1100,6 @@
         modal.style.display = 'flex';
     }
 
-    function openAccumulateModal(pack) {
-        currentSelectedPack = pack;
-        const modal = document.getElementById('accumulateModal');
-        const modalIcon = document.getElementById('accumulateModalIcon');
-        const modalDesc = document.getElementById('accumulateModalDesc');
-        let iconColor = pack.iconcolor || 'text-purple';
-        let iconClass = pack.icon || 'fa-trophy';
-        modalIcon.innerHTML = `<i class="${iconClass} ${iconColor}" style="font-size:2rem;"></i> <span>${escapeHtml(pack.name)}</span>`;
-        
-        let rewardsHtml = '';
-        if (pack.rewards && Array.isArray(pack.rewards)) {
-            rewardsHtml = '<ul style="margin-top: 10px; padding-left: 20px;">';
-            pack.rewards.forEach(reward => {
-                rewardsHtml += `<li>${escapeHtml(reward.name || reward.item)} x ${reward.num}</li>`;
-            });
-            rewardsHtml += '</ul>';
-        } else if (pack.desc) {
-            rewardsHtml = `<p>${escapeHtml(pack.desc).replace(/\\r\\n/g, '<br>')}</p>`;
-        }
-        
-        modalDesc.innerHTML = `
-            <p><strong>🎯 领取条件: 累计充值达到 ${pack.needpay} 元</strong></p>
-            <p><strong>💰 当前累计充值: ${userTotalPay} 元</strong></p>
-            <p>📦 礼包内容:</p>
-            ${rewardsHtml}
-            ${userTotalPay >= pack.needpay ? '<p style="color: #4ade80;">✅ 已满足领取条件，点击下方按钮领取</p>' : `<p style="color: #ef4444;">❌ 还需充值 ${pack.needpay - userTotalPay} 元</p>`}
-        `;
-        modal.style.display = 'flex';
-    }
-
     function openPtbModal() {
         const modal = document.getElementById('ptbModal');
         if (!modal) return;
@@ -1380,49 +1176,6 @@
         }
     }
 
-    async function performClaimPack(pack) {
-        if (!currentSession || !currentSession.token) {
-            showToast('请先登录', true);
-            await verifyOrLogin();
-            if (!currentSession) return false;
-        }
-        
-        if (!currentRoleSid) {
-            const hasRole = await fetchRoleInfo();
-            if (!hasRole) {
-                showToast('未找到角色，请先创建角色', true);
-                return false;
-            }
-        }
-        
-        showLoading(true);
-        try {
-            const claimRes = await apiRequest('/api/redeem-accumulate', {
-                method: 'POST',
-                body: JSON.stringify({
-                    token: currentSession.token,
-                    sid: currentRoleSid,
-                    pack_id: pack.id
-                })
-            });
-            
-            if (claimRes.code === 200) {
-                showToast(`领取成功！`, false);
-                await fetchAccumulatePacks();
-                renderItems('accumulate');
-                return true;
-            } else {
-                showToast(`领取失败: ${claimRes.msg || '未知错误'}`, true);
-                return false;
-            }
-        } catch(e) {
-            showToast(`请求异常: ${e.message}`, true);
-            return false;
-        } finally {
-            showLoading(false);
-        }
-    }
-
     async function performPtbRecharge() {
         const amountInput = document.getElementById('ptbAmount');
         const phoneInput = document.getElementById('ptbPhone');
@@ -1478,34 +1231,6 @@
         currentSelectedItem = null;
     });
     
-    document.getElementById('confirmClaimBtn')?.addEventListener('click', async () => {
-        if (!currentSelectedPack) return;
-        document.getElementById('accumulateModal').style.display = 'none';
-        await performClaimPack(currentSelectedPack);
-        currentSelectedPack = null;
-    });
-    document.getElementById('closeAccumulateModalBtn')?.addEventListener('click', () => {
-        document.getElementById('accumulateModal').style.display = 'none';
-        currentSelectedPack = null;
-    });
-    
-    window.addEventListener('click', (e) => {
-        const modal = document.getElementById('modal');
-        if (e.target === modal) {
-            modal.style.display = 'none';
-            currentSelectedItem = null;
-        }
-        const accumulateModal = document.getElementById('accumulateModal');
-        if (e.target === accumulateModal) {
-            accumulateModal.style.display = 'none';
-            currentSelectedPack = null;
-        }
-        const ptbModal = document.getElementById('ptbModal');
-        if (e.target === ptbModal) {
-            ptbModal.style.display = 'none';
-        }
-    });
-
     document.getElementById('closePtbModalBtn')?.addEventListener('click', () => {
         document.getElementById('ptbModal').style.display = 'none';
     });

@@ -765,6 +765,13 @@ async def handle_shop_page(request):
         return web.FileResponse(shop_file)
     return web.Response(text='商城页面未找到', status=404)
 
+async def handle_lc_page(request):
+    public_dir = Path(__file__).parent / 'public'
+    lc_file = public_dir / 'LC.html'
+    if lc_file.exists():
+        return web.FileResponse(lc_file)
+    return web.Response(text='累充页面未找到', status=404)
+
 async def handle_create_payment(request):
     try:
         data = await request.json()
@@ -1035,6 +1042,7 @@ def setup_routes(app):
     app.router.add_get('/api/accumulate-packs', handle_accumulate_packs)
     app.router.add_get('/', handle_index)
     app.router.add_get('/shop.html', handle_shop_page)
+    app.router.add_get('/LC.html', handle_lc_page)
 
 async def background_tasks():
     while True:

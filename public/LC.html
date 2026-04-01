@@ -1,0 +1,891 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>最强蜗牛BT - 累充豪礼</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #0a0e1a 0%, #0f1422 100%);
+            color: #e8eaf6;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            gap: 15px;
+            background: rgba(18, 25, 45, 0.6);
+            backdrop-filter: blur(10px);
+            padding: 16px 24px;
+            border-radius: 24px;
+            border: 1px solid rgba(255,255,255,0.08);
+        }
+
+        .logo h1 {
+            font-size: 1.6rem;
+            background: linear-gradient(135deg, #FFD700, #FFA500);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            font-weight: 800;
+        }
+
+        .logo p {
+            font-size: 0.8rem;
+            color: #8e9aaf;
+        }
+
+        .stats {
+            display: flex;
+            gap: 20px;
+            background: rgba(0,0,0,0.3);
+            padding: 8px 20px;
+            border-radius: 40px;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-label {
+            font-size: 0.7rem;
+            color: #8e9aaf;
+            letter-spacing: 1px;
+        }
+
+        .stat-value {
+            font-weight: 700;
+            font-size: 1.2rem;
+            color: #FFD966;
+        }
+
+        .search-bar {
+            margin-bottom: 20px;
+            position: relative;
+        }
+        .search-bar input {
+            width: 100%;
+            padding: 12px 20px;
+            padding-left: 45px;
+            border-radius: 50px;
+            border: 1px solid rgba(255,255,255,0.2);
+            background: rgba(22, 32, 55, 0.6);
+            color: #fff;
+            font-size: 14px;
+            outline: none;
+            transition: all 0.3s;
+        }
+        .search-bar input:focus {
+            border-color: #FFD700;
+            background: rgba(22, 32, 55, 0.9);
+        }
+        .search-bar i {
+            position: absolute;
+            left: 18px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #8e9aaf;
+            font-size: 16px;
+        }
+        .search-clear {
+            position: absolute;
+            right: 18px;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+            color: #8e9aaf;
+            display: none;
+        }
+        .search-clear:hover {
+            color: #FFD700;
+        }
+        .search-hint {
+            position: absolute;
+            right: 45px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 11px;
+            color: #8e9aaf;
+            background: rgba(0,0,0,0.5);
+            padding: 2px 6px;
+            border-radius: 12px;
+            pointer-events: none;
+        }
+
+        .goods-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 24px;
+            margin-top: 20px;
+        }
+
+        .card {
+            background: rgba(22, 32, 55, 0.7);
+            backdrop-filter: blur(8px);
+            border-radius: 28px;
+            border: 1px solid rgba(255,255,255,0.08);
+            overflow: hidden;
+            transition: transform 0.2s, box-shadow 0.2s;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 35px -12px rgba(0,0,0,0.5);
+            border-color: rgba(255,215,0,0.3);
+        }
+
+        .card-header {
+            padding: 20px 20px 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .card-name {
+            font-size: 1.25rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card-name i {
+            font-size: 1.6rem;
+        }
+
+        .badge {
+            background: rgba(0,0,0,0.5);
+            padding: 4px 10px;
+            border-radius: 40px;
+            font-size: 0.7rem;
+            font-weight: 500;
+        }
+
+        .badge.claimed {
+            background: #6b7280;
+            color: white;
+        }
+
+        .badge.can-claim {
+            background: #10b981;
+            color: white;
+        }
+
+        .badge.limited {
+            background: #ef4444;
+            color: white;
+        }
+
+        .card-desc {
+            padding: 16px 20px;
+            font-size: 0.85rem;
+            color: #b9c3db;
+            line-height: 1.5;
+            min-height: 80px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            white-space: pre-line;
+        }
+
+        .card-footer {
+            padding: 16px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: auto;
+        }
+
+        .price {
+            font-size: 1.6rem;
+            font-weight: 800;
+            color: #FFD966;
+        }
+
+        .price small {
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: #b9c3db;
+        }
+
+        .buy-btn {
+            background: linear-gradient(135deg, #FFD700, #FFA500);
+            border: none;
+            color: #0a0e1a;
+            font-weight: 700;
+            padding: 8px 20px;
+            border-radius: 40px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: inherit;
+            font-size: 0.9rem;
+        }
+
+        .buy-btn:hover {
+            transform: scale(1.02);
+            box-shadow: 0 4px 12px rgba(255,165,0,0.4);
+        }
+
+        .buy-btn.disabled {
+            background: #6b7280;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .accumulate-card {
+            background: linear-gradient(135deg, rgba(168, 85, 247, 0.2), rgba(139, 92, 246, 0.1));
+            border: 1px solid rgba(168, 85, 247, 0.4);
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            backdrop-filter: blur(12px);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background: #111827;
+            border-radius: 32px;
+            max-width: 500px;
+            width: 90%;
+            padding: 28px;
+            border: 1px solid rgba(255,215,0,0.3);
+            box-shadow: 0 25px 40px rgba(0,0,0,0.5);
+        }
+
+        .modal-header {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .modal-body {
+            margin: 20px 0;
+            line-height: 1.6;
+            color: #cbd5e6;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+        }
+
+        .modal-btn {
+            padding: 10px 24px;
+            border-radius: 40px;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .confirm-btn {
+            background: #FFD700;
+            color: #0a0e1a;
+        }
+
+        .cancel-btn {
+            background: #374151;
+            color: white;
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #1f2937;
+            color: #FFD966;
+            padding: 12px 24px;
+            border-radius: 60px;
+            font-weight: 500;
+            z-index: 1100;
+            box-shadow: 0 4px 12px black;
+            border-left: 4px solid #FFD700;
+            pointer-events: none;
+            transition: opacity 0.3s;
+        }
+
+        .loading-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.6);
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            backdrop-filter: blur(4px);
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid rgba(255,215,0,0.3);
+            border-top: 4px solid #FFD700;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .user-total {
+            background: rgba(0,0,0,0.3);
+            padding: 8px 16px;
+            border-radius: 40px;
+            font-size: 0.9rem;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .user-total span {
+            color: #FFD966;
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+
+        .no-results {
+            text-align: center;
+            padding: 60px;
+            color: #8e9aaf;
+            font-size: 1.1rem;
+        }
+
+        @media (max-width: 680px) {
+            body {
+                padding: 12px;
+            }
+            .goods-grid {
+                grid-template-columns: 1fr;
+            }
+            .stats {
+                width: 100%;
+                justify-content: space-between;
+            }
+        }
+
+        .cdk-return {
+            display: inline-block;
+            margin-bottom: 15px;
+        }
+        .cdk-return a {
+            color: #FFD700;
+            text-decoration: none;
+            font-size: 14px;
+        }
+        .cdk-return a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="cdk-return">
+        <a href="/" target="_blank">← 返回CDK领取工具</a>
+    </div>
+    <div class="header">
+        <div class="logo">
+            <h1><i class="fas fa-trophy"></i> 累充豪礼</h1>
+            <p>累计充值达标即可领取豪华奖励</p>
+        </div>
+        <div class="stats">
+            <div class="stat-item">
+                <div class="stat-label">累计充值</div>
+                <div class="stat-value" id="totalRecharge">0</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="search-bar">
+        <i class="fas fa-search"></i>
+        <input type="text" id="searchInput" placeholder="输入至少2个字搜索礼包名称、金额或奖励...">
+        <span class="search-hint" id="searchHint">至少2字</span>
+        <i class="fas fa-times search-clear" id="searchClear"></i>
+    </div>
+
+    <div id="goodsContainer" class="goods-grid"></div>
+</div>
+
+<div id="accumulateModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header" id="accumulateModalIcon"></div>
+        <div class="modal-body" id="accumulateModalDesc"></div>
+        <div class="modal-buttons">
+            <button class="modal-btn cancel-btn" id="closeAccumulateModalBtn">取消</button>
+            <button class="modal-btn confirm-btn" id="confirmClaimBtn">立即领取</button>
+        </div>
+    </div>
+</div>
+
+<div id="toast" class="toast" style="opacity:0;"></div>
+<div id="loadingOverlay" class="loading-overlay">
+    <div class="spinner"></div>
+</div>
+
+<script>
+    let accumulatePacks = [];
+    let userTotalPay = 0;
+    let currentSession = null;
+    let currentSelectedPack = null;
+    let currentRoleSid = null;
+    let currentSearchKeyword = '';
+
+    const STORAGE_KEY = 'game_mall_session';
+
+    function showToast(msg, isError = false) {
+        const toast = document.getElementById('toast');
+        toast.textContent = msg;
+        toast.style.backgroundColor = isError ? '#991b1b' : '#1f2937';
+        toast.style.color = isError ? '#ffb3b3' : '#FFD966';
+        toast.style.opacity = '1';
+        setTimeout(() => {
+            toast.style.opacity = '0';
+        }, 3000);
+    }
+
+    function showLoading(show) {
+        const overlay = document.getElementById('loadingOverlay');
+        overlay.style.display = show ? 'flex' : 'none';
+    }
+
+    function escapeHtml(str) {
+        if (!str) return '';
+        return str.replace(/[&<>]/g, function(m) {
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
+            return m;
+        }).replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g, function(c) {
+            return c;
+        });
+    }
+
+    function getSessionFromStorage() {
+        const stored = localStorage.getItem(STORAGE_KEY);
+        if (stored) {
+            try {
+                const sess = JSON.parse(stored);
+                if (sess.expiresAt && sess.expiresAt > Date.now()) {
+                    return sess;
+                } else {
+                    localStorage.removeItem(STORAGE_KEY);
+                }
+            } catch(e) {}
+        }
+        return null;
+    }
+
+    async function apiRequest(endpoint, options = {}) {
+        const headers = {
+            'Content-Type': 'application/json',
+            ...options.headers
+        };
+        if (currentSession?.token) {
+            headers['Authorization'] = currentSession.token;
+        }
+        const config = {
+            ...options,
+            headers,
+            credentials: 'include'
+        };
+        try {
+            const response = await fetch(endpoint, config);
+            if (!response.ok) {
+                const errText = await response.text();
+                throw new Error(`HTTP ${response.status}: ${errText}`);
+            }
+            return await response.json();
+        } catch (e) {
+            console.error('API请求失败:', e);
+            throw e;
+        }
+    }
+
+    async function fetchRoleInfo() {
+        if (!currentSession?.token) return false;
+        try {
+            const serversRes = await apiRequest('/api/servers');
+            if (serversRes.code === 200 && serversRes.data.length > 0) {
+                for (const server of serversRes.data) {
+                    const roleRes = await apiRequest(`/api/role?token=${encodeURIComponent(currentSession.token)}&sid=${server.id}`);
+                    if (roleRes.code === 200 && roleRes.data && roleRes.data.length > 0) {
+                        currentRoleSid = server.id;
+                        return true;
+                    }
+                }
+            }
+            return false;
+        } catch(e) {
+            console.warn('获取角色信息失败', e);
+            return false;
+        }
+    }
+
+    async function fetchAccumulatePacks() {
+        if (!currentSession?.token || !currentRoleSid) {
+            accumulatePacks = [];
+            userTotalPay = 0;
+            document.getElementById('totalRecharge').innerText = '0';
+            renderItems();
+            return;
+        }
+        
+        try {
+            const res = await apiRequest(`/api/accumulate-packs?token=${encodeURIComponent(currentSession.token)}&sid=${currentRoleSid}`);
+            if (res.code === 200) {
+                accumulatePacks = res.data.packs || [];
+                userTotalPay = res.data.user_total || 0;
+                document.getElementById('totalRecharge').innerText = userTotalPay.toLocaleString();
+            } else {
+                accumulatePacks = [];
+            }
+        } catch(e) {
+            console.warn('获取累充礼包失败', e);
+            accumulatePacks = [];
+        }
+        renderItems();
+    }
+
+    async function verifyOrLogin() {
+        const stored = getSessionFromStorage();
+        if (stored && stored.sessionId) {
+            try {
+                const verifyRes = await apiRequest('/api/verify-session', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({})
+                });
+                if (verifyRes.valid) {
+                    currentSession = {
+                        sessionId: stored.sessionId,
+                        token: verifyRes.data.token,
+                        account: verifyRes.data.account,
+                        username: verifyRes.data.username,
+                        expiresAt: verifyRes.data.expiresAt
+                    };
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+                        sessionId: stored.sessionId,
+                        token: verifyRes.data.token,
+                        expiresAt: verifyRes.data.expiresAt
+                    }));
+                    
+                    const hasRole = await fetchRoleInfo();
+                    if (hasRole) {
+                        await fetchAccumulatePacks();
+                        return true;
+                    }
+                    await fetchAccumulatePacks();
+                    return true;
+                }
+            } catch(e) {}
+        }
+        
+        const guestAccount = 'guest_' + Date.now();
+        const guestPass = '123456';
+        try {
+            const loginRes = await apiRequest('/api/login', {
+                method: 'POST',
+                body: JSON.stringify({ account: guestAccount, password: guestPass })
+            });
+            if (loginRes.code === 200) {
+                currentSession = {
+                    sessionId: loginRes.data.sessionId,
+                    token: loginRes.data.token,
+                    account: loginRes.data.account,
+                    username: loginRes.data.username,
+                    expiresAt: loginRes.data.expiresAt
+                };
+                localStorage.setItem(STORAGE_KEY, JSON.stringify({
+                    sessionId: loginRes.data.sessionId,
+                    token: loginRes.data.token,
+                    expiresAt: loginRes.data.expiresAt
+                }));
+                
+                const hasRole = await fetchRoleInfo();
+                if (hasRole) {
+                    await fetchAccumulatePacks();
+                    return true;
+                }
+                await fetchAccumulatePacks();
+                return true;
+            } else {
+                showToast('自动登录失败，请刷新重试', true);
+                return false;
+            }
+        } catch(e) {
+            showToast('连接服务器失败', true);
+            return false;
+        }
+    }
+
+    function filterBySearch(items) {
+        if (!currentSearchKeyword) return items;
+        const keyword = currentSearchKeyword.toLowerCase().trim();
+        if (keyword.length < 2) return items;
+        
+        return items.filter(item => {
+            const nameMatch = item.name && item.name.toLowerCase().includes(keyword);
+            const needpayMatch = item.needpay && item.needpay.toString().includes(keyword);
+            const descMatch = (item.desc && item.desc.toLowerCase().includes(keyword)) || 
+                               (item.rewards && Array.isArray(item.rewards) && item.rewards.some(r => 
+                                   (r.name && r.name.toLowerCase().includes(keyword)) || 
+                                   (r.item && r.item.toLowerCase().includes(keyword))
+                               ));
+            return nameMatch || needpayMatch || descMatch;
+        });
+    }
+
+    function renderItems() {
+        let filteredPacks = filterBySearch(accumulatePacks);
+        
+        const container = document.getElementById('goodsContainer');
+        if (!container) return;
+        container.innerHTML = '';
+        
+        if (filteredPacks.length === 0) {
+            const searchHint = currentSearchKeyword && currentSearchKeyword.length >= 2 ? `没有找到与"${escapeHtml(currentSearchKeyword)}"相关的礼包` : '暂无累充礼包';
+            container.innerHTML = `<div class="no-results"><i class="fas fa-search" style="font-size: 3rem; margin-bottom: 15px; opacity: 0.5;"></i><br>${searchHint}</div>`;
+            return;
+        }
+        
+        const headerDiv = document.createElement('div');
+        headerDiv.className = 'user-total';
+        headerDiv.innerHTML = `🎯 当前累计充值金额: <span>${userTotalPay.toLocaleString()}</span> 元`;
+        container.appendChild(headerDiv);
+        
+        const gridDiv = document.createElement('div');
+        gridDiv.className = 'goods-grid';
+        
+        filteredPacks.forEach(pack => {
+            const card = document.createElement('div');
+            card.className = 'card accumulate-card';
+            const canClaim = pack.can_claim && !pack.claimed;
+            const claimed = pack.claimed;
+            
+            let statusBadge = '';
+            if (claimed) {
+                statusBadge = '<span class="badge claimed">已领取</span>';
+            } else if (pack.can_claim) {
+                statusBadge = '<span class="badge can-claim">可领取</span>';
+            } else {
+                statusBadge = `<span class="badge limited">需充值${pack.needpay}元</span>`;
+            }
+            
+            const iconColor = pack.iconcolor || 'text-purple';
+            const iconHtml = `<i class="${pack.icon || 'fa-trophy'} ${iconColor}"></i>`;
+            
+            let rewardText = '';
+            if (pack.rewards && Array.isArray(pack.rewards)) {
+                rewardText = pack.rewards.map(r => r.name || r.item).slice(0, 3).join(', ');
+                if (pack.rewards.length > 3) rewardText += '...';
+            } else if (pack.desc) {
+                rewardText = pack.desc.substring(0, 80);
+            }
+            
+            card.innerHTML = `
+                <div class="card-header">
+                    <div class="card-name">
+                        ${iconHtml}
+                        <span>${escapeHtml(pack.name)}</span>
+                    </div>
+                    <div>${statusBadge}</div>
+                </div>
+                <div class="card-desc">${escapeHtml(rewardText || pack.desc || '无描述')}</div>
+                <div class="card-footer">
+                    <div class="price"><small>累计</small> ${pack.needpay}<small>元</small></div>
+                    <button class="buy-btn ${claimed ? 'disabled' : ''}" data-id="${pack.id}" ${claimed ? 'disabled' : ''}>${claimed ? '已领取' : (canClaim ? '立即领取' : '未达标')}</button>
+                </div>
+            `;
+            const btn = card.querySelector('.buy-btn');
+            if (!claimed) {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    if (canClaim) {
+                        openAccumulateModal(pack);
+                    } else {
+                        showToast(`累计充值不足，需要累计充值${pack.needpay}元，当前累计充值${userTotalPay}元`, true);
+                    }
+                });
+            }
+            gridDiv.appendChild(card);
+        });
+        container.appendChild(gridDiv);
+    }
+
+    function openAccumulateModal(pack) {
+        currentSelectedPack = pack;
+        const modal = document.getElementById('accumulateModal');
+        const modalIcon = document.getElementById('accumulateModalIcon');
+        const modalDesc = document.getElementById('accumulateModalDesc');
+        let iconColor = pack.iconcolor || 'text-purple';
+        let iconClass = pack.icon || 'fa-trophy';
+        modalIcon.innerHTML = `<i class="${iconClass} ${iconColor}" style="font-size:2rem;"></i> <span>${escapeHtml(pack.name)}</span>`;
+        
+        let rewardsHtml = '';
+        if (pack.rewards && Array.isArray(pack.rewards)) {
+            rewardsHtml = '<ul style="margin-top: 10px; padding-left: 20px;">';
+            pack.rewards.forEach(reward => {
+                rewardsHtml += `<li>${escapeHtml(reward.name || reward.item)} x ${reward.num}</li>`;
+            });
+            rewardsHtml += '</ul>';
+        } else if (pack.desc) {
+            rewardsHtml = `<p>${escapeHtml(pack.desc).replace(/\\r\\n/g, '<br>')}</p>`;
+        }
+        
+        modalDesc.innerHTML = `
+            <p><strong>🎯 领取条件: 累计充值达到 ${pack.needpay} 元</strong></p>
+            <p><strong>💰 当前累计充值: ${userTotalPay} 元</strong></p>
+            <p>📦 礼包内容:</p>
+            ${rewardsHtml}
+            ${userTotalPay >= pack.needpay ? '<p style="color: #4ade80;">✅ 已满足领取条件，点击下方按钮领取</p>' : `<p style="color: #ef4444;">❌ 还需充值 ${pack.needpay - userTotalPay} 元</p>`}
+        `;
+        modal.style.display = 'flex';
+    }
+
+    async function performClaimPack(pack) {
+        if (!currentSession || !currentSession.token) {
+            showToast('请先登录', true);
+            await verifyOrLogin();
+            if (!currentSession) return false;
+        }
+        
+        if (!currentRoleSid) {
+            const hasRole = await fetchRoleInfo();
+            if (!hasRole) {
+                showToast('未找到角色，请先创建角色', true);
+                return false;
+            }
+        }
+        
+        showLoading(true);
+        try {
+            const claimRes = await apiRequest('/api/redeem-accumulate', {
+                method: 'POST',
+                body: JSON.stringify({
+                    token: currentSession.token,
+                    sid: currentRoleSid,
+                    pack_id: pack.id
+                })
+            });
+            
+            if (claimRes.code === 200) {
+                showToast(`领取成功！`, false);
+                await fetchAccumulatePacks();
+                return true;
+            } else {
+                showToast(`领取失败: ${claimRes.msg || '未知错误'}`, true);
+                return false;
+            }
+        } catch(e) {
+            showToast(`请求异常: ${e.message}`, true);
+            return false;
+        } finally {
+            showLoading(false);
+        }
+    }
+
+    document.getElementById('confirmClaimBtn')?.addEventListener('click', async () => {
+        if (!currentSelectedPack) return;
+        document.getElementById('accumulateModal').style.display = 'none';
+        await performClaimPack(currentSelectedPack);
+        currentSelectedPack = null;
+    });
+    document.getElementById('closeAccumulateModalBtn')?.addEventListener('click', () => {
+        document.getElementById('accumulateModal').style.display = 'none';
+        currentSelectedPack = null;
+    });
+    
+    window.addEventListener('click', (e) => {
+        const accumulateModal = document.getElementById('accumulateModal');
+        if (e.target === accumulateModal) {
+            accumulateModal.style.display = 'none';
+            currentSelectedPack = null;
+        }
+    });
+
+    const searchInput = document.getElementById('searchInput');
+    const searchClear = document.getElementById('searchClear');
+    const searchHint = document.getElementById('searchHint');
+    
+    function updateSearchHint() {
+        const keyword = searchInput.value;
+        if (keyword.length > 0 && keyword.length < 2) {
+            searchHint.style.display = 'block';
+            searchHint.textContent = '至少2字';
+        } else if (keyword.length >= 2) {
+            searchHint.style.display = 'none';
+        } else {
+            searchHint.style.display = 'block';
+            searchHint.textContent = '至少2字';
+        }
+    }
+    
+    searchInput.addEventListener('input', (e) => {
+        const keyword = e.target.value;
+        if (keyword.length >= 2 || keyword.length === 0) {
+            currentSearchKeyword = keyword;
+            if (currentSearchKeyword) {
+                searchClear.style.display = 'block';
+            } else {
+                searchClear.style.display = 'none';
+            }
+            renderItems();
+        }
+        updateSearchHint();
+    });
+    
+    searchClear.addEventListener('click', () => {
+        searchInput.value = '';
+        currentSearchKeyword = '';
+        searchClear.style.display = 'none';
+        updateSearchHint();
+        renderItems();
+    });
+    
+    updateSearchHint();
+
+    async function init() {
+        await verifyOrLogin();
+    }
+
+    init();
+</script>
+</body>
+</html>
