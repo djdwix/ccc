@@ -26,9 +26,11 @@ CDK_COOLDOWN_MINUTES = 6
 DATA_DIR = Path(__file__).parent / 'data'
 LOGS_DIR = Path(__file__).parent / 'logs'
 SSL_DIR = Path(__file__).parent / 'ssl'
+DESK_DIR = Path(__file__).parent / 'desk'
 
 DATA_DIR.mkdir(exist_ok=True)
 LOGS_DIR.mkdir(exist_ok=True)
+DESK_DIR.mkdir(exist_ok=True)
 
 LOGIN_FAIL_FILE = DATA_DIR / 'login_fail.json'
 LOGIN_FAIL_BACKUP_FILE = DATA_DIR / 'login_fail.backup.json'
@@ -751,6 +753,18 @@ async def handle_logs_list(request):
     except Exception:
         return web.json_response({'code': 500, 'msg': '获取日志列表失败'}, status=500)
 
+async def handle_image(request):
+    try:
+        image_name = request.match_info.get('name', '')
+        if not image_name:
+            return web.Response(status=404)
+        image_path = DESK_DIR / image_name
+        if not image_path.exists():
+            return web.Response(status=404)
+        return web.FileResponse(image_path)
+    except Exception:
+        return web.Response(status=404)
+
 async def handle_index(request):
     public_dir = Path(__file__).parent / 'public'
     index_file = public_dir / 'cdk.html'
@@ -885,29 +899,27 @@ async def handle_redeem_accumulate(request):
         
         total_pay = profile_data.get('data', {}).get('paydata', {}).get('total', 0)
         
-        async with aiohttp.ClientSession() as session:
-            async with session.get(f"{API_BASE}/?do=profile", headers={'Authorization': token}, params={'sid': sid}) as resp:
-                shop_response = await safe_json_response(resp)
-        
-        if shop_response.get('code') != 200:
-            return web.json_response({'code': 500, 'msg': '获取礼包信息失败'}, status=500)
-        
-        packs_data = shop_response.get('data', {}).get('shopdata', {})
+        packs_data = profile_data.get('data', {}).get('packsdata', {})
         
         target_pack = None
         need_pay = 0
+        rewards_list = None
         for key, value in packs_data.items():
             try:
-                pack = json.loads(value) if isinstance(value, str) else value
-                if str(pack.get('id')) == str(pack_id) and pack.get('type') == 2:
+                if isinstance(value, str):
+                    pack = json.loads(value)
+                else:
+                    pack = value
+                if isinstance(pack, dict) and (str(pack.get('id')) == str(pack_id) or str(key) == str(pack_id)):
                     target_pack = pack
-                    need_pay = pack.get('needpay', 0)
+                    need_pay = int(pack.get('needpay', 0)) if pack.get('needpay') else 0
+                    rewards_list = pack.get('rewards')
                     break
             except:
                 pass
         
         if not target_pack:
-            return web.json_response({'code': 404, 'msg': '礼包不存在或不是累充礼包'}, status=404)
+            return web.json_response({'code': 404, 'msg': '礼包不存在'}, status=404)
         
         if total_pay < need_pay:
             return web.json_response({'code': 400, 'msg': f'累计充值不足，需要累计充值{need_pay}元，当前累计充值{total_pay}元'})
@@ -919,11 +931,10 @@ async def handle_redeem_accumulate(request):
         if claimed.get(claim_key, False):
             return web.json_response({'code': 400, 'msg': '该礼包已领取过'})
         
-        lc_packid = target_pack.get('rewards')
-        if lc_packid and isinstance(lc_packid, list):
+        if rewards_list and isinstance(rewards_list, list):
             success_all = True
             async with aiohttp.ClientSession() as session:
-                for reward in lc_packid:
+                for reward in rewards_list:
                     item_id = reward.get('item')
                     if item_id:
                         async with session.get(f"{API_BASE}/?do=getGiftRewards", headers={'Authorization': token}, params={'sid': sid, 'packid': item_id}) as resp:
@@ -933,9 +944,15 @@ async def handle_redeem_accumulate(request):
                             add_log_entry(f"累充礼包{pack_id}领取奖励{item_id}失败: {reward_result.get('msg', '未知错误')}")
             if not success_all:
                 return web.json_response({'code': 500, 'msg': '部分奖励领取失败，请重试'})
+        elif rewards_list:
+            async with aiohttp.ClientSession() as session:
+                async with session.get(f"{API_BASE}/?do=getGiftRewards", headers={'Authorization': token}, params={'sid': sid, 'packid': rewards_list}) as resp:
+                    result = await safe_json_response(resp)
+            if result.get('code') != 200:
+                return web.json_response(result)
         else:
             async with aiohttp.ClientSession() as session:
-                async with session.get(f"{API_BASE}/?do=getGiftRewards", headers={'Authorization': token}, params={'sid': sid, 'packid': lc_packid if lc_packid else pack_id}) as resp:
+                async with session.get(f"{API_BASE}/?do=getGiftRewards", headers={'Authorization': token}, params={'sid': sid, 'packid': pack_id}) as resp:
                     result = await safe_json_response(resp)
             if result.get('code') != 200:
                 return web.json_response(result)
@@ -968,39 +985,55 @@ async def handle_accumulate_packs(request):
         total_pay = profile_data.get('data', {}).get('paydata', {}).get('total', 0)
         account = profile_data.get('data', {}).get('account', '')
         
-        shop_data = profile_data.get('data', {}).get('shopdata', {})
+        packs_data = profile_data.get('data', {}).get('packsdata', {})
         
         accumulate_packs = []
-        for key, value in shop_data.items():
-            try:
-                if isinstance(value, str):
-                    pack = json.loads(value)
-                else:
-                    pack = value
-                if pack.get('type') == 2:
-                    pack['id'] = int(pack.get('id', key))
-                    accumulate_packs.append(pack)
-            except Exception as e:
-                pass
+        if isinstance(packs_data, dict):
+            for key, value in packs_data.items():
+                try:
+                    if isinstance(value, str):
+                        pack = json.loads(value)
+                    else:
+                        pack = value
+                    if isinstance(pack, dict):
+                        pack_id = pack.get('id')
+                        if pack_id is None:
+                            pack_id = int(key) if key.isdigit() else key
+                        pack['id'] = pack_id
+                        accumulate_packs.append(pack)
+                except Exception as e:
+                    add_log_entry(f"解析礼包数据异常: {str(e)}")
+                    pass
         
-        accumulate_packs.sort(key=lambda x: x.get('needpay', 0))
+        accumulate_packs.sort(key=lambda x: int(x.get('needpay', 0)) if x.get('needpay') else 0)
         
         claimed = load_claimed_packs()
         
         result_packs = []
         for pack in accumulate_packs:
-            claim_key = f"{account}_{sid}_{pack.get('id')}"
-            pack_needpay = pack.get('needpay', 0)
+            pack_id = pack.get('id')
+            claim_key = f"{account}_{sid}_{pack_id}"
+            pack_needpay = int(pack.get('needpay', 0)) if pack.get('needpay') else 0
+            
+            rewards = pack.get('rewards')
+            if isinstance(rewards, str):
+                try:
+                    rewards = json.loads(rewards)
+                except:
+                    rewards = []
+            elif not isinstance(rewards, list):
+                rewards = []
+            
             result_packs.append({
-                'id': pack.get('id'),
-                'name': pack.get('name'),
+                'id': pack_id,
+                'name': pack.get('name', '未知礼包'),
                 'needpay': pack_needpay,
-                'desc': pack.get('desc'),
-                'icon': pack.get('icon', 'fa-trophy'),
-                'iconcolor': pack.get('iconcolor', 'text-purple'),
+                'desc': pack.get('desc', ''),
+                'icon': pack.get('icon', 'fa-gift'),
+                'iconcolor': pack.get('iconcolor', 'text-yellow'),
                 'limit': pack.get('limit', 1),
                 'type': pack.get('type', 2),
-                'rewards': pack.get('rewards'),
+                'rewards': rewards,
                 'claimed': claimed.get(claim_key, False),
                 'can_claim': total_pay >= pack_needpay and not claimed.get(claim_key, False)
             })
@@ -1040,6 +1073,7 @@ def setup_routes(app):
     app.router.add_post('/api/ptb-recharge', handle_ptb_recharge)
     app.router.add_post('/api/redeem-accumulate', handle_redeem_accumulate)
     app.router.add_get('/api/accumulate-packs', handle_accumulate_packs)
+    app.router.add_get('/api/image/{name}', handle_image)
     app.router.add_get('/', handle_index)
     app.router.add_get('/shop.html', handle_shop_page)
     app.router.add_get('/LC.html', handle_lc_page)

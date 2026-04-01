@@ -492,8 +492,6 @@
             if (m === '<') return '&lt;';
             if (m === '>') return '&gt;';
             return m;
-        }).replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g, function(c) {
-            return c;
         });
     }
 
@@ -568,6 +566,7 @@
         }
         
         try {
+            showLoading(true);
             const res = await apiRequest(`/api/accumulate-packs?token=${encodeURIComponent(currentSession.token)}&sid=${currentRoleSid}`);
             if (res.code === 200) {
                 accumulatePacks = res.data.packs || [];
@@ -575,10 +574,14 @@
                 document.getElementById('totalRecharge').innerText = userTotalPay.toLocaleString();
             } else {
                 accumulatePacks = [];
+                showToast(`获取礼包失败: ${res.msg || '未知错误'}`, true);
             }
         } catch(e) {
             console.warn('获取累充礼包失败', e);
             accumulatePacks = [];
+            showToast('获取累充礼包失败', true);
+        } finally {
+            showLoading(false);
         }
         renderItems();
     }
@@ -607,10 +610,6 @@
                     }));
                     
                     const hasRole = await fetchRoleInfo();
-                    if (hasRole) {
-                        await fetchAccumulatePacks();
-                        return true;
-                    }
                     await fetchAccumulatePacks();
                     return true;
                 }
@@ -620,6 +619,7 @@
         const guestAccount = 'guest_' + Date.now();
         const guestPass = '123456';
         try {
+            showLoading(true);
             const loginRes = await apiRequest('/api/login', {
                 method: 'POST',
                 body: JSON.stringify({ account: guestAccount, password: guestPass })
@@ -639,10 +639,6 @@
                 }));
                 
                 const hasRole = await fetchRoleInfo();
-                if (hasRole) {
-                    await fetchAccumulatePacks();
-                    return true;
-                }
                 await fetchAccumulatePacks();
                 return true;
             } else {
@@ -652,6 +648,8 @@
         } catch(e) {
             showToast('连接服务器失败', true);
             return false;
+        } finally {
+            showLoading(false);
         }
     }
 
@@ -663,13 +661,37 @@
         return items.filter(item => {
             const nameMatch = item.name && item.name.toLowerCase().includes(keyword);
             const needpayMatch = item.needpay && item.needpay.toString().includes(keyword);
-            const descMatch = (item.desc && item.desc.toLowerCase().includes(keyword)) || 
-                               (item.rewards && Array.isArray(item.rewards) && item.rewards.some(r => 
-                                   (r.name && r.name.toLowerCase().includes(keyword)) || 
-                                   (r.item && r.item.toLowerCase().includes(keyword))
-                               ));
+            let descMatch = false;
+            if (item.desc && item.desc.toLowerCase().includes(keyword)) {
+                descMatch = true;
+            }
+            if (item.rewards && Array.isArray(item.rewards)) {
+                for (const reward of item.rewards) {
+                    if (reward.name && reward.name.toLowerCase().includes(keyword)) {
+                        descMatch = true;
+                        break;
+                    }
+                    if (reward.item && reward.item.toLowerCase().includes(keyword)) {
+                        descMatch = true;
+                        break;
+                    }
+                }
+            }
             return nameMatch || needpayMatch || descMatch;
         });
+    }
+
+    function formatRewardsText(rewards) {
+        if (!rewards || !Array.isArray(rewards) || rewards.length === 0) return '';
+        const rewardNames = [];
+        for (const r of rewards) {
+            if (r.name) rewardNames.push(r.name);
+            else if (r.item) rewardNames.push(r.item);
+        }
+        if (rewardNames.length === 0) return '';
+        let text = rewardNames.slice(0, 3).join(', ');
+        if (rewardNames.length > 3) text += '...';
+        return text;
     }
 
     function renderItems() {
@@ -680,8 +702,8 @@
         container.innerHTML = '';
         
         if (filteredPacks.length === 0) {
-            const searchHint = currentSearchKeyword && currentSearchKeyword.length >= 2 ? `没有找到与"${escapeHtml(currentSearchKeyword)}"相关的礼包` : '暂无累充礼包';
-            container.innerHTML = `<div class="no-results"><i class="fas fa-search" style="font-size: 3rem; margin-bottom: 15px; opacity: 0.5;"></i><br>${searchHint}</div>`;
+            const searchHintText = currentSearchKeyword && currentSearchKeyword.length >= 2 ? `没有找到与"${escapeHtml(currentSearchKeyword)}"相关的礼包` : '暂无累充礼包';
+            container.innerHTML = `<div class="no-results"><i class="fas fa-search" style="font-size: 3rem; margin-bottom: 15px; opacity: 0.5;"></i><br>${searchHintText}</div>`;
             return;
         }
         
@@ -693,30 +715,29 @@
         const gridDiv = document.createElement('div');
         gridDiv.className = 'goods-grid';
         
-        filteredPacks.forEach(pack => {
+        for (const pack of filteredPacks) {
             const card = document.createElement('div');
             card.className = 'card accumulate-card';
-            const canClaim = pack.can_claim && !pack.claimed;
-            const claimed = pack.claimed;
+            const canClaim = pack.can_claim === true;
+            const claimed = pack.claimed === true;
             
             let statusBadge = '';
             if (claimed) {
                 statusBadge = '<span class="badge claimed">已领取</span>';
-            } else if (pack.can_claim) {
+            } else if (canClaim) {
                 statusBadge = '<span class="badge can-claim">可领取</span>';
             } else {
                 statusBadge = `<span class="badge limited">需充值${pack.needpay}元</span>`;
             }
             
-            const iconColor = pack.iconcolor || 'text-purple';
-            const iconHtml = `<i class="${pack.icon || 'fa-trophy'} ${iconColor}"></i>`;
+            const iconColor = pack.iconcolor || 'text-yellow';
+            const iconHtml = `<i class="${pack.icon || 'fa-gift'} ${iconColor}" style="color: #FFD966;"></i>`;
             
-            let rewardText = '';
-            if (pack.rewards && Array.isArray(pack.rewards)) {
-                rewardText = pack.rewards.map(r => r.name || r.item).slice(0, 3).join(', ');
-                if (pack.rewards.length > 3) rewardText += '...';
-            } else if (pack.desc) {
-                rewardText = pack.desc.substring(0, 80);
+            let rewardText = formatRewardsText(pack.rewards);
+            if (!rewardText && pack.desc) {
+                rewardText = pack.desc.length > 80 ? pack.desc.substring(0, 80) + '...' : pack.desc;
+            } else if (!rewardText) {
+                rewardText = '无描述';
             }
             
             card.innerHTML = `
@@ -727,7 +748,7 @@
                     </div>
                     <div>${statusBadge}</div>
                 </div>
-                <div class="card-desc">${escapeHtml(rewardText || pack.desc || '无描述')}</div>
+                <div class="card-desc">${escapeHtml(rewardText)}</div>
                 <div class="card-footer">
                     <div class="price"><small>累计</small> ${pack.needpay}<small>元</small></div>
                     <button class="buy-btn ${claimed ? 'disabled' : ''}" data-id="${pack.id}" ${claimed ? 'disabled' : ''}>${claimed ? '已领取' : (canClaim ? '立即领取' : '未达标')}</button>
@@ -745,7 +766,7 @@
                 });
             }
             gridDiv.appendChild(card);
-        });
+        }
         container.appendChild(gridDiv);
     }
 
@@ -754,27 +775,34 @@
         const modal = document.getElementById('accumulateModal');
         const modalIcon = document.getElementById('accumulateModalIcon');
         const modalDesc = document.getElementById('accumulateModalDesc');
-        let iconColor = pack.iconcolor || 'text-purple';
-        let iconClass = pack.icon || 'fa-trophy';
-        modalIcon.innerHTML = `<i class="${iconClass} ${iconColor}" style="font-size:2rem;"></i> <span>${escapeHtml(pack.name)}</span>`;
+        const iconColor = pack.iconcolor || 'text-yellow';
+        const iconClass = pack.icon || 'fa-gift';
+        modalIcon.innerHTML = `<i class="${iconClass} ${iconColor}" style="font-size:2rem; color:#FFD966;"></i> <span>${escapeHtml(pack.name)}</span>`;
         
         let rewardsHtml = '';
-        if (pack.rewards && Array.isArray(pack.rewards)) {
+        if (pack.rewards && Array.isArray(pack.rewards) && pack.rewards.length > 0) {
             rewardsHtml = '<ul style="margin-top: 10px; padding-left: 20px;">';
-            pack.rewards.forEach(reward => {
-                rewardsHtml += `<li>${escapeHtml(reward.name || reward.item)} x ${reward.num}</li>`;
-            });
+            for (const reward of pack.rewards) {
+                const rewardName = reward.name || reward.item || '未知物品';
+                const rewardNum = reward.num !== undefined ? ` x ${reward.num}` : '';
+                rewardsHtml += `<li>${escapeHtml(rewardName)}${rewardNum}</li>`;
+            }
             rewardsHtml += '</ul>';
         } else if (pack.desc) {
             rewardsHtml = `<p>${escapeHtml(pack.desc).replace(/\\r\\n/g, '<br>')}</p>`;
+        } else {
+            rewardsHtml = '<p>暂无奖励描述</p>';
         }
         
+        const needpay = pack.needpay || 0;
+        const canClaimStatus = userTotalPay >= needpay && !pack.claimed;
+        
         modalDesc.innerHTML = `
-            <p><strong>🎯 领取条件: 累计充值达到 ${pack.needpay} 元</strong></p>
+            <p><strong>🎯 领取条件: 累计充值达到 ${needpay} 元</strong></p>
             <p><strong>💰 当前累计充值: ${userTotalPay} 元</strong></p>
             <p>📦 礼包内容:</p>
             ${rewardsHtml}
-            ${userTotalPay >= pack.needpay ? '<p style="color: #4ade80;">✅ 已满足领取条件，点击下方按钮领取</p>' : `<p style="color: #ef4444;">❌ 还需充值 ${pack.needpay - userTotalPay} 元</p>`}
+            ${canClaimStatus ? '<p style="color: #4ade80;">✅ 已满足领取条件，点击下方按钮领取</p>' : `<p style="color: #ef4444;">❌ 还需充值 ${needpay - userTotalPay} 元</p>`}
         `;
         modal.style.display = 'flex';
     }

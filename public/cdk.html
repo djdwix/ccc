@@ -339,7 +339,7 @@
 <div class="container">
     <header>
         <div class="header-logo">
-            <img src="desk/zqwn.png" alt="最强蜗牛" onerror="this.style.display='none'">
+            <img id="logo-image" src="" alt="最强蜗牛" style="display: none;">
         </div>
         <h1>蜗牛BT-CDK批量领取工具</h1>
         <div style="width: 60px;"></div>
@@ -477,6 +477,22 @@
 
     function closeModal() {
         document.getElementById('alert-modal').style.display = 'none';
+    }
+
+    async function loadImage() {
+        try {
+            const imgElement = document.getElementById('logo-image');
+            const response = await fetch('/api/image/zqwn.png');
+            if (response.ok) {
+                imgElement.src = '/api/image/zqwn.png';
+                imgElement.style.display = 'block';
+            } else {
+                imgElement.style.display = 'none';
+            }
+        } catch (error) {
+            console.error('加载图片失败', error);
+            document.getElementById('logo-image').style.display = 'none';
+        }
     }
 
     async function checkCooldown() {
@@ -1116,6 +1132,7 @@
     }
 
     document.addEventListener('DOMContentLoaded', async function() {
+        await loadImage();
         await loadServers();
         
         const sessionRestored = await verifyAndRestoreSession();
