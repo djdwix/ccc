@@ -267,13 +267,17 @@ def save_cdk_cooldown(cooldown):
         pass
 
 def check_cdk_cooldown(account):
+    if not account:
+        return {'can_redeem': True}
     cooldown = load_cdk_cooldown()
     now = int(time.time() * 1000)
     last_redeem = cooldown.get(account, 0)
     cooldown_ms = CDK_COOLDOWN_MINUTES * 60 * 1000
     if last_redeem and (now - last_redeem) < cooldown_ms:
-        minutes_remaining = int((cooldown_ms - (now - last_redeem)) / 60000)
-        seconds_remaining = int(((cooldown_ms - (now - last_redeem)) % 60000) / 1000)
+        elapsed = now - last_redeem
+        remaining_ms = cooldown_ms - elapsed
+        minutes_remaining = int(remaining_ms / 60000)
+        seconds_remaining = int((remaining_ms % 60000) / 1000)
         return {
             'can_redeem': False,
             'minutes_remaining': minutes_remaining,
@@ -283,6 +287,8 @@ def check_cdk_cooldown(account):
     return {'can_redeem': True}
 
 def update_cdk_cooldown(account):
+    if not account:
+        return
     cooldown = load_cdk_cooldown()
     cooldown[account] = int(time.time() * 1000)
     save_cdk_cooldown(cooldown)
@@ -957,8 +963,6 @@ async def handle_accumulate_packs(request):
         
         shop_data = profile_data.get('data', {}).get('shopdata', {})
         
-        add_log_entry(f"获取累充礼包: shopdata keys = {list(shop_data.keys())}")
-        
         accumulate_packs = []
         for key, value in shop_data.items():
             try:
@@ -969,9 +973,7 @@ async def handle_accumulate_packs(request):
                 if pack.get('type') == 2:
                     pack['id'] = int(pack.get('id', key))
                     accumulate_packs.append(pack)
-                    add_log_entry(f"找到累充礼包: {pack.get('name')}, needpay={pack.get('needpay')}")
             except Exception as e:
-                add_log_entry(f"解析礼包失败: {key}, error={str(e)}")
                 pass
         
         accumulate_packs.sort(key=lambda x: x.get('needpay', 0))
@@ -981,10 +983,11 @@ async def handle_accumulate_packs(request):
         result_packs = []
         for pack in accumulate_packs:
             claim_key = f"{account}_{sid}_{pack.get('id')}"
+            pack_needpay = pack.get('needpay', 0)
             result_packs.append({
                 'id': pack.get('id'),
                 'name': pack.get('name'),
-                'needpay': pack.get('needpay'),
+                'needpay': pack_needpay,
                 'desc': pack.get('desc'),
                 'icon': pack.get('icon', 'fa-trophy'),
                 'iconcolor': pack.get('iconcolor', 'text-purple'),
@@ -992,10 +995,8 @@ async def handle_accumulate_packs(request):
                 'type': pack.get('type', 2),
                 'rewards': pack.get('rewards'),
                 'claimed': claimed.get(claim_key, False),
-                'can_claim': total_pay >= pack.get('needpay', 0) and not claimed.get(claim_key, False)
+                'can_claim': total_pay >= pack_needpay and not claimed.get(claim_key, False)
             })
-        
-        add_log_entry(f"返回累充礼包数量: {len(result_packs)}, 总充值: {total_pay}")
         
         return web.json_response({
             'code': 200,
