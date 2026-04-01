@@ -810,27 +810,30 @@
     }
 
     async function fetchAccumulatePacks() {
-        if (!currentSession?.token || !currentRoleSid) {
-            accumulatePacks = [];
-            userTotalPay = 0;
-            document.getElementById('totalRecharge').innerText = '0';
-            return;
-        }
-        
-        try {
-            const res = await apiRequest(`/api/accumulate-packs?token=${encodeURIComponent(currentSession.token)}&sid=${currentRoleSid}`);
-            if (res.code === 200) {
-                accumulatePacks = res.data.packs || [];
-                userTotalPay = res.data.user_total || 0;
-                document.getElementById('totalRecharge').innerText = userTotalPay.toLocaleString();
-            } else {
-                accumulatePacks = [];
-            }
-        } catch(e) {
-            console.warn('获取累充礼包失败', e);
-            accumulatePacks = [];
-        }
+    if (!currentSession?.token || !currentRoleSid) {
+        accumulatePacks = [];
+        userTotalPay = 0;
+        document.getElementById('totalRecharge').innerText = '0';
+        return;
     }
+    
+    try {
+        const res = await apiRequest(`/api/accumulate-packs?token=${encodeURIComponent(currentSession.token)}&sid=${currentRoleSid}`);
+        console.log('累充礼包响应:', res);
+        if (res.code === 200) {
+            accumulatePacks = res.data.packs || [];
+            userTotalPay = res.data.user_total || 0;
+            document.getElementById('totalRecharge').innerText = userTotalPay.toLocaleString();
+            console.log('累充礼包数量:', accumulatePacks.length);
+        } else {
+            accumulatePacks = [];
+            console.error('获取累充礼包失败:', res.msg);
+        }
+    } catch(e) {
+        console.warn('获取累充礼包失败', e);
+        accumulatePacks = [];
+    }
+}
 
     async function verifyOrLogin() {
         const stored = getSessionFromStorage();

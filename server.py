@@ -863,9 +863,8 @@ async def handle_redeem_accumulate(request):
         if not token or not sid or not pack_id:
             return web.json_response({'code': 400, 'msg': '缺少必要参数'}, status=400)
         
-        profile_url = f"{API_BASE}/?do=profile"
         async with aiohttp.ClientSession() as session:
-            async with session.get(profile_url, headers={'Authorization': token}, params={'sid': sid}) as resp:
+            async with session.get(f"{API_BASE}/?do=profile", headers={'Authorization': token}, params={'sid': sid}) as resp:
                 profile_data = await safe_json_response(resp)
         
         if profile_data.get('code') != 200:
@@ -919,6 +918,8 @@ async def handle_redeem_accumulate(request):
                         if reward_result.get('code') != 200:
                             success_all = False
                             add_log_entry(f"累充礼包{pack_id}领取奖励{item_id}失败: {reward_result.get('msg', '未知错误')}")
+            if not success_all:
+                return web.json_response({'code': 500, 'msg': '部分奖励领取失败，请重试'})
         else:
             async with aiohttp.ClientSession() as session:
                 async with session.get(f"{API_BASE}/?do=getGiftRewards", headers={'Authorization': token}, params={'sid': sid, 'packid': lc_packid if lc_packid else pack_id}) as resp:
@@ -954,23 +955,23 @@ async def handle_accumulate_packs(request):
         total_pay = profile_data.get('data', {}).get('paydata', {}).get('total', 0)
         account = profile_data.get('data', {}).get('account', '')
         
-        async with aiohttp.ClientSession() as session:
-            async with session.get(f"{API_BASE}/?do=profile", headers={'Authorization': token}, params={'sid': sid}) as resp:
-                shop_response = await safe_json_response(resp)
+        shop_data = profile_data.get('data', {}).get('shopdata', {})
         
-        if shop_response.get('code') != 200:
-            return web.json_response({'code': shop_response.get('code', 500), 'msg': shop_response.get('msg', '获取礼包信息失败')})
-        
-        packs_data = shop_response.get('data', {}).get('shopdata', {})
+        add_log_entry(f"获取累充礼包: shopdata keys = {list(shop_data.keys())}")
         
         accumulate_packs = []
-        for key, value in packs_data.items():
+        for key, value in shop_data.items():
             try:
-                pack = json.loads(value) if isinstance(value, str) else value
+                if isinstance(value, str):
+                    pack = json.loads(value)
+                else:
+                    pack = value
                 if pack.get('type') == 2:
                     pack['id'] = int(pack.get('id', key))
                     accumulate_packs.append(pack)
-            except:
+                    add_log_entry(f"找到累充礼包: {pack.get('name')}, needpay={pack.get('needpay')}")
+            except Exception as e:
+                add_log_entry(f"解析礼包失败: {key}, error={str(e)}")
                 pass
         
         accumulate_packs.sort(key=lambda x: x.get('needpay', 0))
@@ -985,14 +986,16 @@ async def handle_accumulate_packs(request):
                 'name': pack.get('name'),
                 'needpay': pack.get('needpay'),
                 'desc': pack.get('desc'),
-                'icon': pack.get('icon', 'mdiGift'),
-                'iconcolor': pack.get('iconcolor', 'text-purple mr-2'),
+                'icon': pack.get('icon', 'fa-trophy'),
+                'iconcolor': pack.get('iconcolor', 'text-purple'),
                 'limit': pack.get('limit', 1),
                 'type': pack.get('type', 2),
                 'rewards': pack.get('rewards'),
                 'claimed': claimed.get(claim_key, False),
                 'can_claim': total_pay >= pack.get('needpay', 0) and not claimed.get(claim_key, False)
             })
+        
+        add_log_entry(f"返回累充礼包数量: {len(result_packs)}, 总充值: {total_pay}")
         
         return web.json_response({
             'code': 200,
@@ -1003,6 +1006,7 @@ async def handle_accumulate_packs(request):
             'msg': '获取成功'
         })
     except Exception as e:
+        add_log_entry(f"获取累充礼包异常: {str(e)}")
         return web.json_response({'code': 500, 'msg': f'获取失败: {str(e)}'}, status=500)
 
 def setup_routes(app):
