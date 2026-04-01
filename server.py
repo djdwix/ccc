@@ -14,16 +14,88 @@ from datetime import datetime, timezone, timedelta
 from pathlib import Path
 import shutil
 import socket
+from cryptography.fernet import Fernet
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+import base64
+import jwt
 
-HTTP_PORT = 3000
-HTTPS_PORT = 3443
+HTTP_PORT = 8084
+HTTPS_PORT = 8449
 API_BASE = 'http://sdk.gaz.tw:96/iapi'
 SECRET_KEY = 'd7a3f4c6e5b81290de4f3c2a1b0987654321fedcba0987654321abcdef567890'
 SESSION_EXPIRY = 15 * 60 * 1000
 MAX_LOG_ENTRIES = 1000
 CDK_COOLDOWN_MINUTES = 6
 
+# 加密相关
+ENCRYPTION_KEY_FILE = Path(__file__).parent / 'data' / 'encryption_key.key'
+JWT_SECRET_KEY = 'd7a3f4c6e5b81290de4f3c2a1b0987654321fedcba0987654321abcdef567890'
+JWT_ALGORITHM = 'HS256'
+JWT_EXPIRATION = 15 * 60  # 15分钟
+
+# 确保数据目录存在
 DATA_DIR = Path(__file__).parent / 'data'
+DATA_DIR.mkdir(exist_ok=True)
+
+# 生成或加载加密密钥
+def get_encryption_key():
+    if ENCRYPTION_KEY_FILE.exists():
+        with open(ENCRYPTION_KEY_FILE, 'rb') as f:
+            return f.read()
+    else:
+        key = Fernet.generate_key()
+        with open(ENCRYPTION_KEY_FILE, 'wb') as f:
+            f.write(key)
+        return key
+
+ENCRYPTION_KEY = get_encryption_key()
+FERNET = Fernet(ENCRYPTION_KEY)
+
+# 生成 JWT 令牌
+def generate_jwt_token(account, token, username):
+    payload = {
+        'account': account,
+        'token': token,
+        'username': username,
+        'authCode': generate_auth_code(),
+        'authCodeUsed': False,
+        'iat': int(time.time()),
+        'exp': int(time.time()) + JWT_EXPIRATION
+    }
+    return jwt.encode(payload, JWT_SECRET_KEY, algorithm=JWT_ALGORITHM)
+
+# 验证 JWT 令牌
+def verify_jwt_token(token):
+    try:
+        payload = jwt.decode(token, JWT_SECRET_KEY, algorithms=[JWT_ALGORITHM])
+        return payload
+    except jwt.ExpiredSignatureError:
+        return None
+    except jwt.InvalidTokenError:
+        return None
+
+# 加密函数
+def encrypt_data(data):
+    if isinstance(data, str):
+        data = data.encode()
+    elif isinstance(data, dict) or isinstance(data, list):
+        data = json.dumps(data).encode()
+    return FERNET.encrypt(data).decode()
+
+# 解密函数
+def decrypt_data(encrypted_data):
+    try:
+        if isinstance(encrypted_data, str):
+            encrypted_data = encrypted_data.encode()
+        decrypted = FERNET.decrypt(encrypted_data).decode()
+        try:
+            return json.loads(decrypted)
+        except:
+            return decrypted
+    except:
+        return encrypted_data
+
 LOGS_DIR = Path(__file__).parent / 'logs'
 SSL_DIR = Path(__file__).parent / 'ssl'
 DESK_DIR = Path(__file__).parent / 'desk'
@@ -148,18 +220,20 @@ def load_login_fail_data():
             save_login_fail_data(empty_data)
             return empty_data
         with open(LOGIN_FAIL_FILE, 'r', encoding='utf-8') as f:
-            data = json.load(f)
+            encrypted_data = json.load(f)
+        data = decrypt_data(encrypted_data)
         if 'hash' in data and 'records' in data:
             if verify_hash(data['records'], data['hash']):
                 return data
             else:
                 if LOGIN_FAIL_BACKUP_FILE.exists():
                     with open(LOGIN_FAIL_BACKUP_FILE, 'r', encoding='utf-8') as bf:
-                        backup_data = json.load(bf)
+                        backup_encrypted = json.load(bf)
+                    backup_data = decrypt_data(backup_encrypted)
                     if 'hash' in backup_data and 'records' in backup_data:
                         if verify_hash(backup_data['records'], backup_data['hash']):
                             with open(LOGIN_FAIL_FILE, 'w', encoding='utf-8') as f:
-                                json.dump(backup_data, f)
+                                json.dump(encrypt_data(backup_data), f)
                             return backup_data
                 default_data = {'records': {}, 'hash': generate_hash({'records': {}})}
                 save_login_fail_data(default_data)
@@ -173,11 +247,12 @@ def load_login_fail_data():
         if LOGIN_FAIL_BACKUP_FILE.exists():
             try:
                 with open(LOGIN_FAIL_BACKUP_FILE, 'r', encoding='utf-8') as bf:
-                    backup_data = json.load(bf)
+                    backup_encrypted = json.load(bf)
+                backup_data = decrypt_data(backup_encrypted)
                 if 'hash' in backup_data and 'records' in backup_data:
                     if verify_hash(backup_data['records'], backup_data['hash']):
                         with open(LOGIN_FAIL_FILE, 'w', encoding='utf-8') as f:
-                            json.dump(backup_data, f)
+                            json.dump(encrypt_data(backup_data), f)
                         return backup_data
             except Exception:
                 pass
@@ -193,7 +268,7 @@ def save_login_fail_data(data):
         if LOGIN_FAIL_FILE.exists():
             shutil.copy(LOGIN_FAIL_FILE, LOGIN_FAIL_BACKUP_FILE)
         with open(LOGIN_FAIL_FILE, 'w', encoding='utf-8') as f:
-            json.dump(save_data, f, indent=2)
+            json.dump(encrypt_data(save_data), f, indent=2)
     except Exception:
         pass
 
@@ -257,14 +332,15 @@ def load_cdk_cooldown():
         if not CDK_REDEEM_COOLDOWN_FILE.exists():
             return {}
         with open(CDK_REDEEM_COOLDOWN_FILE, 'r', encoding='utf-8') as f:
-            return json.load(f)
+            encrypted_data = json.load(f)
+        return decrypt_data(encrypted_data)
     except Exception:
         return {}
 
 def save_cdk_cooldown(cooldown):
     try:
         with open(CDK_REDEEM_COOLDOWN_FILE, 'w', encoding='utf-8') as f:
-            json.dump(cooldown, f, indent=2)
+            json.dump(encrypt_data(cooldown), f, indent=2)
     except Exception:
         pass
 
@@ -300,30 +376,43 @@ def load_sessions():
         if not SESSIONS_FILE.exists():
             return {}
         with open(SESSIONS_FILE, 'r', encoding='utf-8') as f:
-            return json.load(f)
+            encrypted_data = json.load(f)
+        decrypted_sessions = {}
+        for session_id, encrypted_session in encrypted_data.items():
+            decrypted_sessions[session_id] = decrypt_data(encrypted_session)
+        return decrypted_sessions
     except Exception:
         return {}
 
 def save_sessions(sessions):
     try:
+        encrypted_sessions = {}
+        for session_id, session_data in sessions.items():
+            encrypted_sessions[session_id] = encrypt_data(session_data)
         with open(SESSIONS_FILE, 'w', encoding='utf-8') as f:
-            json.dump(sessions, f, indent=2)
+            json.dump(encrypted_sessions, f, indent=2)
     except Exception:
         pass
+
+def generate_auth_code():
+    return ''.join(random.choices('0123456789', k=6))
 
 def create_session(account, token, username):
     sessions = load_sessions()
     session_id = uuid.uuid4().hex
     expires_at = int(time.time() * 1000) + SESSION_EXPIRY
+    auth_code = generate_auth_code()
     sessions[session_id] = {
         'account': account,
         'token': token,
         'username': username,
+        'authCode': auth_code,
+        'authCodeUsed': False,
         'createdAt': int(time.time() * 1000),
         'expiresAt': expires_at
     }
     save_sessions(sessions)
-    return {'sessionId': session_id, 'expiresAt': expires_at}
+    return {'sessionId': session_id, 'expiresAt': expires_at, 'authCode': auth_code}
 
 def get_session(session_id):
     sessions = load_sessions()
@@ -335,6 +424,28 @@ def get_session(session_id):
         save_sessions(sessions)
         return None
     return session
+
+def verify_auth_code(session_id, auth_code):
+    sessions = load_sessions()
+    session = sessions.get(session_id)
+    if not session:
+        return False
+    if session['expiresAt'] < int(time.time() * 1000):
+        del sessions[session_id]
+        save_sessions(sessions)
+        return False
+    if session.get('authCode') != auth_code:
+        return False
+    if session.get('authCodeUsed'):
+        return False
+    return True
+
+def mark_auth_code_used(session_id):
+    sessions = load_sessions()
+    session = sessions.get(session_id)
+    if session:
+        session['authCodeUsed'] = True
+        save_sessions(sessions)
 
 def cleanup_expired_sessions():
     sessions = load_sessions()
@@ -439,25 +550,25 @@ async def handle_login(request):
         data = await request.json()
         account = data.get('account')
         password = data.get('password')
-        session_id = request.cookies.get('sessionId')
+        jwt_token = request.cookies.get('jwt_token')
         
-        if session_id:
-            session = get_session(session_id)
-            if session:
-                max_age = session['expiresAt'] - int(time.time() * 1000)
-                if max_age > 0:
-                    response = web.json_response({
-                        'code': 200,
-                        'data': {
-                            'token': session['token'],
-                            'username': session['username'],
-                            'account': session['account'],
-                            'expiresAt': session['expiresAt']
-                        },
-                        'msg': '会话恢复成功'
-                    })
-                    response.set_cookie('sessionId', session_id, max_age=int(max_age/1000), httponly=True, samesite='Lax', path='/')
-                    return response
+        if jwt_token:
+            payload = verify_jwt_token(jwt_token)
+            if payload:
+                response = web.json_response({
+                    'code': 200,
+                    'data': {
+                        'token': payload['token'],
+                        'username': payload['username'],
+                        'account': payload['account'],
+                        'expiresAt': payload['exp'] * 1000,
+                        'authCode': payload.get('authCode', ''),
+                        'authCodeUsed': payload.get('authCodeUsed', False)
+                    },
+                    'msg': '会话恢复成功'
+                })
+                response.set_cookie('jwt_token', jwt_token, max_age=JWT_EXPIRATION, httponly=True, samesite='Lax', path='/')
+                return response
         
         if not account or not password:
             return web.json_response({'code': 400, 'msg': '账号和密码不能为空'}, status=400)
@@ -485,18 +596,20 @@ async def handle_login(request):
             return web.json_response(response_data)
         
         if response_data.get('code') == 200 and response_data.get('data', {}).get('token'):
-            session_result = create_session(account, response_data['data']['token'], response_data['data'].get('username', account))
+            jwt_token = generate_jwt_token(account, response_data['data']['token'], response_data['data'].get('username', account))
+            payload = verify_jwt_token(jwt_token)
             response = web.json_response({
                 'code': 200,
                 'data': {
                     'token': response_data['data']['token'],
                     'username': response_data['data'].get('username', account),
-                    'expiresAt': session_result['expiresAt'],
-                    'sessionId': session_result['sessionId']
+                    'expiresAt': payload['exp'] * 1000,
+                    'authCode': payload.get('authCode', ''),
+                    'authCodeUsed': payload.get('authCodeUsed', False)
                 },
                 'msg': response_data.get('msg', '登录成功')
             })
-            response.set_cookie('sessionId', session_result['sessionId'], max_age=int(SESSION_EXPIRY/1000), httponly=True, samesite='Lax', path='/')
+            response.set_cookie('jwt_token', jwt_token, max_age=JWT_EXPIRATION, httponly=True, samesite='Lax', path='/')
             add_log_entry(f"账号登录成功", account)
             return response
         
@@ -538,43 +651,78 @@ async def handle_login(request):
 
 async def handle_logout(request):
     try:
-        session_id = request.cookies.get('sessionId')
-        if session_id:
-            sessions = load_sessions()
-            if session_id in sessions:
-                del sessions[session_id]
-                save_sessions(sessions)
-            response = web.json_response({'code': 200, 'msg': '登出成功'})
-            response.del_cookie('sessionId', path='/')
-            return response
-        return web.json_response({'code': 200, 'msg': '登出成功'})
+        response = web.json_response({'code': 200, 'msg': '登出成功'})
+        response.del_cookie('jwt_token', path='/')
+        response.del_cookie('sessionId', path='/')  # 兼容旧的会话管理
+        return response
     except Exception:
         return web.json_response({'code': 500, 'msg': '登出失败'}, status=500)
 
+async def handle_verify_auth_code(request):
+    try:
+        data = await request.json()
+        auth_code = data.get('authCode')
+        session_id = request.cookies.get('sessionId')
+        
+        if not session_id or not auth_code:
+            return web.json_response({'code': 400, 'msg': '缺少必要参数', 'valid': False}, status=400)
+        
+        valid = verify_auth_code(session_id, auth_code)
+        if valid:
+            mark_auth_code_used(session_id)
+            return web.json_response({'code': 200, 'msg': '授权码验证成功', 'valid': True})
+        else:
+            return web.json_response({'code': 403, 'msg': '授权码无效或已使用', 'valid': False}, status=403)
+    except Exception as e:
+        return web.json_response({'code': 500, 'msg': '服务器错误', 'valid': False}, status=500)
+
 async def handle_verify_session(request):
     try:
-        session_id = request.cookies.get('sessionId')
-        if not session_id:
-            return web.json_response({'code': 401, 'valid': False, 'msg': '无会话'})
-        session = get_session(session_id)
-        if session:
-            max_age = session['expiresAt'] - int(time.time() * 1000)
-            if max_age > 0:
-                response = web.json_response({
-                    'code': 200,
-                    'valid': True,
-                    'data': {
-                        'account': session['account'],
-                        'username': session['username'],
-                        'token': session['token'],
-                        'expiresAt': session['expiresAt']
-                    },
-                    'msg': '会话有效'
-                })
-                response.set_cookie('sessionId', session_id, max_age=int(max_age/1000), httponly=True, samesite='Lax', path='/')
-                return response
+        jwt_token = request.cookies.get('jwt_token')
+        if not jwt_token:
+            # 兼容旧的会话管理
+            session_id = request.cookies.get('sessionId')
+            if not session_id:
+                return web.json_response({'code': 401, 'valid': False, 'msg': '无会话'})
+            session = get_session(session_id)
+            if session:
+                max_age = session['expiresAt'] - int(time.time() * 1000)
+                if max_age > 0:
+                    response = web.json_response({
+                        'code': 200,
+                        'valid': True,
+                        'data': {
+                            'account': session['account'],
+                            'username': session['username'],
+                            'token': session['token'],
+                            'expiresAt': session['expiresAt']
+                        },
+                        'msg': '会话有效'
+                    })
+                    response.set_cookie('sessionId', session_id, max_age=int(max_age/1000), httponly=True, samesite='Lax', path='/')
+                    return response
+            response = web.json_response({'code': 401, 'valid': False, 'msg': '会话已过期'})
+            response.del_cookie('sessionId', path='/')
+            return response
+        
+        payload = verify_jwt_token(jwt_token)
+        if payload:
+            response = web.json_response({
+                'code': 200,
+                'valid': True,
+                'data': {
+                    'account': payload['account'],
+                    'username': payload['username'],
+                    'token': payload['token'],
+                    'expiresAt': payload['exp'] * 1000
+                },
+                'msg': '会话有效'
+            })
+            response.set_cookie('jwt_token', jwt_token, max_age=JWT_EXPIRATION, httponly=True, samesite='Lax', path='/')
+            return response
+        
         response = web.json_response({'code': 401, 'valid': False, 'msg': '会话已过期'})
-        response.del_cookie('sessionId', path='/')
+        response.del_cookie('jwt_token', path='/')
         return response
     except Exception:
         return web.json_response({'code': 500, 'msg': '验证会话失败'}, status=500)
@@ -584,6 +732,17 @@ async def handle_codes(request):
 
 async def handle_check_cooldown(request):
     try:
+        # 优先使用 JWT 令牌
+        jwt_token = request.cookies.get('jwt_token')
+        if jwt_token:
+            session = verify_jwt_token(jwt_token)
+            if session:
+                account = session['account']
+                cooldown_status = check_cdk_cooldown(account)
+                return web.json_response({'code': 200, 'data': cooldown_status, 'msg': '获取成功'})
+            return web.json_response({'code': 401, 'valid': False, 'msg': '会话无效'})
+        
+        # 兼容旧的会话管理
         session_id = request.cookies.get('sessionId')
         if not session_id:
             return web.json_response({'code': 401, 'valid': False, 'msg': '未登录'})
@@ -869,14 +1028,15 @@ def load_claimed_packs():
         if not claimed_packs_file.exists():
             return {}
         with open(claimed_packs_file, 'r', encoding='utf-8') as f:
-            return json.load(f)
+            encrypted_data = json.load(f)
+        return decrypt_data(encrypted_data)
     except Exception:
         return {}
 
 def save_claimed_packs(claimed):
     try:
         with open(claimed_packs_file, 'w', encoding='utf-8') as f:
-            json.dump(claimed, f, indent=2)
+            json.dump(encrypt_data(claimed), f, indent=2)
     except Exception:
         pass
 
@@ -1099,10 +1259,12 @@ def setup_routes(app):
     app.router.add_post('/api/ptb-recharge', handle_ptb_recharge)
     app.router.add_post('/api/redeem-accumulate', handle_redeem_accumulate)
     app.router.add_get('/api/accumulate-packs', handle_accumulate_packs)
+    app.router.add_post('/api/verify-auth-code', handle_verify_auth_code)
     app.router.add_get('/api/image/{name}', handle_image)
     app.router.add_get('/', handle_index)
     app.router.add_get('/shop.html', handle_shop_page)
     app.router.add_get('/LC.html', handle_lc_page)
+    app.router.add_static('/', Path(__file__).parent / 'public')
 
 async def background_tasks():
     while True:
@@ -1114,8 +1276,12 @@ async def start_background(app):
     asyncio.create_task(background_tasks())
 
 async def main():
+    print("开始启动服务器...")
     app = web.Application()
+    print("创建应用实例成功")
+    
     setup_routes(app)
+    print("设置路由成功")
     
     cors = setup_cors(app, defaults={
         "*": ResourceOptions(
@@ -1127,29 +1293,39 @@ async def main():
     })
     for route in app.router.routes():
         cors.add(route)
+    print("设置 CORS 成功")
     
     app.on_startup.append(start_background)
+    print("添加后台任务成功")
     
     runner = web.AppRunner(app)
     await runner.setup()
+    print("设置 AppRunner 成功")
     
     server_ip = get_server_ip()
+    print(f"获取服务器 IP 地址: {server_ip}")
     
-    site = web.TCPSite(runner, server_ip, HTTP_PORT)
+    print(f"正在启动 HTTP 服务器在 0.0.0.0:{HTTP_PORT}...")
+    site = web.TCPSite(runner, '0.0.0.0', HTTP_PORT)
     await site.start()
     print(f"HTTP 服务器运行在 http://{server_ip}:{HTTP_PORT}")
     print(f"本地访问: http://localhost:{HTTP_PORT}")
+    print(f"其他设备访问: http://{server_ip}:{HTTP_PORT}")
     
     if SSL_DIR.exists():
+        print(f"SSL 目录存在: {SSL_DIR}")
         key_file = SSL_DIR / 'server.key'
         cert_file = SSL_DIR / 'server.crt'
         if key_file.exists() and cert_file.exists():
+            print(f"SSL 证书文件存在: {key_file} 和 {cert_file}")
             ssl_context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
             ssl_context.load_cert_chain(cert_file, key_file)
-            ssl_site = web.TCPSite(runner, server_ip, HTTPS_PORT, ssl_context=ssl_context)
+            print("创建 SSL 上下文成功")
+            ssl_site = web.TCPSite(runner, '0.0.0.0', HTTPS_PORT, ssl_context=ssl_context)
             await ssl_site.start()
             print(f"HTTPS 服务器运行在 https://{server_ip}:{HTTPS_PORT}")
             print(f"本地访问: https://localhost:{HTTPS_PORT}")
+            print(f"其他设备访问: https://unrepentant12.cloud:{HTTPS_PORT}")
         else:
             print(f"SSL证书文件不存在: {key_file} 或 {cert_file}")
     else:
@@ -1164,8 +1340,12 @@ async def main():
         stop_event.set()
     
     loop = asyncio.get_event_loop()
-    for sig in (signal.SIGINT, signal.SIGTERM):
-        loop.add_signal_handler(sig, signal_handler)
+    import platform
+    if platform.system() != 'Windows':
+        for sig in (signal.SIGINT, signal.SIGTERM):
+            loop.add_signal_handler(sig, signal_handler)
+    else:
+        print("Windows 系统不支持信号处理器，使用 Ctrl+C 停止服务器")
     
     await stop_event.wait()
     

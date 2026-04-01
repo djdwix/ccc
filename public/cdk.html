@@ -13,11 +13,105 @@
             font-display: swap;
         }
         * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        :root {
+            --bg-color: #f5f5f5;
+            --card-bg: #fff;
+            --text-color: #333;
+            --text-secondary: #666;
+            --border-color: #ddd;
+            --header-bg: #fff;
+            --section-bg: #fff;
+            --btn-bg: #4a90e2;
+            --btn-hover: #357abd;
+            --btn-danger: #e05d44;
+            --btn-danger-hover: #c94c36;
+            --btn-success: #52c41a;
+            --btn-success-hover: #40a9ff;
+            --btn-shop: #722ed1;
+            --btn-shop-hover: #531dab;
+            --btn-lc: #a855f7;
+            --btn-lc-hover: #9333ea;
+            --btn-disabled: #cccccc;
+            --user-info-bg: #e6f7ff;
+            --user-info-border: #91d5ff;
+            --user-name-color: #1890ff;
+            --session-time-color: #ff4d4f;
+            --tips-bg: #fffbe6;
+            --tips-border: #ffe58f;
+            --tips-color: #614d0c;
+            --code-list-bg: #fff;
+            --code-item-border: #eee;
+            --code-key-color: #1890ff;
+            --cooldown-bg: #fff3e0;
+            --cooldown-border: #ffb74d;
+            --cooldown-color: #e65100;
+            --cooldown-timer: #d32f2f;
+            --log-bg: #1e1e1e;
+            --log-text: #d4d4f;
+            --log-info: #52c41a;
+            --log-error: #ff4d4f;
+            --progress-bg: #e8e8e8;
+            --progress-inner: #52c41a;
+            --modal-bg: #fff;
+            --badge-success: #52c41a;
+            --badge-fail: #ff4d4f;
+            --badge-info: #1890ff;
+            --badge-warning: #ff9800;
+        }
+        
+        [data-theme="dark"] {
+            --bg-color: #121212;
+            --card-bg: #1e1e1e;
+            --text-color: #e0e0e0;
+            --text-secondary: #b0b0b0;
+            --border-color: #333;
+            --header-bg: #1e1e1e;
+            --section-bg: #1e1e1e;
+            --btn-bg: #6a1b9a;
+            --btn-hover: #4a148c;
+            --btn-danger: #c62828;
+            --btn-danger-hover: #b71c1c;
+            --btn-success: #2e7d32;
+            --btn-success-hover: #1b5e20;
+            --btn-shop: #6a1b9a;
+            --btn-shop-hover: #4a148c;
+            --btn-lc: #6a1b9a;
+            --btn-lc-hover: #4a148c;
+            --btn-disabled: #444;
+            --user-info-bg: #1a237e;
+            --user-info-border: #283593;
+            --user-name-color: #90caf9;
+            --session-time-color: #ef9a9a;
+            --tips-bg: #3e2723;
+            --tips-border: #5d4037;
+            --tips-color: #ffcc80;
+            --code-list-bg: #1e1e1e;
+            --code-item-border: #333;
+            --code-key-color: #90caf9;
+            --cooldown-bg: #3e2723;
+            --cooldown-border: #5d4037;
+            --cooldown-color: #ffcc80;
+            --cooldown-timer: #ffab91;
+            --log-bg: #121212;
+            --log-text: #e0e0e0;
+            --log-info: #81c784;
+            --log-error: #e57373;
+            --progress-bg: #333;
+            --progress-inner: #4caf50;
+            --modal-bg: #1e1e1e;
+            --badge-success: #4caf50;
+            --badge-fail: #f44336;
+            --badge-info: #2196f3;
+            --badge-warning: #ff9800;
+        }
+        
         body {
             font-family: 'CustomFont', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
             line-height: 1.6;
-            color: #333;
-            background-color: #f5f5f5;
+            color: var(--text-color);
+            background-color: var(--bg-color);
+            transition: background-color 0.3s, color 0.3s;
         }
         .container {
             max-width: 1200px;
@@ -25,7 +119,7 @@
             padding: 20px;
         }
         header {
-            background-color: #fff;
+            background-color: var(--header-bg);
             padding: 20px;
             margin-bottom: 20px;
             border-radius: 8px;
@@ -35,6 +129,7 @@
             justify-content: space-between;
             flex-wrap: wrap;
             gap: 15px;
+            transition: background-color 0.3s;
         }
         .header-logo {
             display: flex;
@@ -48,35 +143,39 @@
         }
         h1 {
             text-align: center;
-            color: #333;
+            color: var(--text-color);
             font-size: 24px;
             font-weight: bold;
             margin: 0;
+            transition: color 0.3s;
         }
         footer {
             text-align: center;
             margin-top: 20px;
             padding: 10px;
-            color: #666;
+            color: var(--text-secondary);
             font-size: 14px;
+            transition: color 0.3s;
         }
         .section {
-            background-color: #fff;
+            background-color: var(--section-bg);
             padding: 20px;
             margin-bottom: 20px;
             border-radius: 8px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            transition: background-color 0.3s;
         }
         .section-title {
             font-size: 18px;
             font-weight: bold;
             margin-bottom: 15px;
             padding-bottom: 8px;
-            border-bottom: 1px solid #eee;
-            color: #333;
+            border-bottom: 1px solid var(--border-color);
+            color: var(--text-color);
             display: flex;
             justify-content: space-between;
             align-items: center;
+            transition: color 0.3s, border-color 0.3s;
         }
         .form-group {
             margin-bottom: 15px;
@@ -85,28 +184,31 @@
             display: block;
             margin-bottom: 5px;
             font-weight: bold;
-            color: #555;
+            color: var(--text-secondary);
+            transition: color 0.3s;
         }
         input[type="text"],
         input[type="password"],
         select {
             width: 100%;
             padding: 10px;
-            border: 1px solid #ddd;
+            border: 1px solid var(--border-color);
             border-radius: 4px;
             font-size: 14px;
-            background-color: #fff;
+            background-color: var(--card-bg);
+            color: var(--text-color);
+            transition: border-color 0.3s, background-color 0.3s, color 0.3s;
         }
         input[type="text"]:focus,
         input[type="password"]:focus,
         select:focus {
-            border-color: #4a90e2;
+            border-color: var(--btn-bg);
             outline: none;
-            box-shadow: 0 0 5px rgba(74,144,226,0.3);
+            box-shadow: 0 0 5px rgba(106, 27, 154, 0.3);
         }
         .btn {
             display: inline-block;
-            background-color: #4a90e2;
+            background-color: var(--btn-bg);
             color: #fff;
             padding: 10px 20px;
             border: none;
@@ -117,19 +219,19 @@
             text-align: center;
             transition: background-color 0.2s;
         }
-        .btn:hover { background-color: #357abd; }
+        .btn:hover { background-color: var(--btn-hover); }
         .btn:disabled {
-            background-color: #cccccc;
+            background-color: var(--btn-disabled);
             cursor: not-allowed;
         }
-        .btn-danger { background-color: #e05d44; }
-        .btn-danger:hover { background-color: #c94c36; }
-        .btn-success { background-color: #52c41a; }
-        .btn-success:hover { background-color: #40a9ff; }
-        .btn-shop { background-color: #722ed1; }
-        .btn-shop:hover { background-color: #531dab; }
-        .btn-lc { background-color: #a855f7; }
-        .btn-lc:hover { background-color: #9333ea; }
+        .btn-danger { background-color: var(--btn-danger); }
+        .btn-danger:hover { background-color: var(--btn-danger-hover); }
+        .btn-success { background-color: var(--btn-success); }
+        .btn-success:hover { background-color: var(--btn-success-hover); }
+        .btn-shop { background-color: var(--btn-shop); }
+        .btn-shop:hover { background-color: var(--btn-shop-hover); }
+        .btn-lc { background-color: var(--btn-lc); }
+        .btn-lc:hover { background-color: var(--btn-lc-hover); }
         .btn-block { display: block; width: 100%; }
         
         .grid {
@@ -145,31 +247,33 @@
         .code-list {
             max-height: 400px;
             overflow-y: auto;
-            border: 1px solid #ddd;
+            border: 1px solid var(--border-color);
             border-radius: 4px;
-            background-color: #fff;
+            background-color: var(--code-list-bg);
+            transition: border-color 0.3s, background-color 0.3s;
         }
         .code-item {
             padding: 10px;
-            border-bottom: 1px solid #eee;
+            border-bottom: 1px solid var(--code-item-border);
             display: flex;
             justify-content: space-between;
             align-items: center;
+            transition: border-color 0.3s;
         }
         .code-item:last-child { border-bottom: none; }
-        .code-item.success { background-color: #e6f7ff; }
-        .code-item.fail { background-color: #fff1f0; }
-        .code-item.running { background-color: #f9f9f9; }
-        .code-key { font-family: monospace; font-weight: bold; color: #1890ff; }
+        .code-item.success { background-color: var(--user-info-bg); }
+        .code-item.fail { background-color: var(--cooldown-bg); }
+        .code-item.running { background-color: var(--tips-bg); }
+        .code-key { font-family: monospace; font-weight: bold; color: var(--code-key-color); }
         .code-status { font-size: 12px; padding: 2px 6px; border-radius: 2px; }
-        .status-wait { background-color: #fafafa; color: #999; border: 1px solid #d9d9d9; }
-        .status-success { background-color: #f6ffed; color: #52c41a; border: 1px solid #b7eb8f; }
-        .status-fail { background-color: #fff2e8; color: #ff4d4f; border: 1px solid #ffa39e; }
-        .status-running { background-color: #e6f7ff; color: #1890ff; border: 1px solid #91d5ff; }
+        .status-wait { background-color: var(--tips-bg); color: var(--text-secondary); border: 1px solid var(--border-color); }
+        .status-success { background-color: var(--user-info-bg); color: var(--badge-success); border: 1px solid var(--user-info-border); }
+        .status-fail { background-color: var(--cooldown-bg); color: var(--badge-fail); border: 1px solid var(--cooldown-border); }
+        .status-running { background-color: var(--user-info-bg); color: var(--badge-info); border: 1px solid var(--user-info-border); }
         
         .log-area {
-            background-color: #1e1e1e;
-            color: #d4d4d4;
+            background-color: var(--log-bg);
+            color: var(--log-text);
             padding: 15px;
             border-radius: 4px;
             font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
@@ -178,21 +282,23 @@
             overflow-y: auto;
             white-space: pre-wrap;
             word-break: break-all;
+            transition: background-color 0.3s, color 0.3s;
         }
-        .log-info { color: #52c41a; }
-        .log-error { color: #ff4d4f; }
+        .log-info { color: var(--log-info); }
+        .log-error { color: var(--log-error); }
         
         .progress-bar {
             height: 20px;
-            background-color: #e8e8e8;
+            background-color: var(--progress-bg);
             border-radius: 10px;
             overflow: hidden;
             margin-bottom: 15px;
             box-shadow: inset 0 1px 2px rgba(0,0,0,0.1);
+            transition: background-color 0.3s;
         }
         .progress-inner {
             height: 100%;
-            background-color: #52c41a;
+            background-color: var(--progress-inner);
             width: 0%;
             transition: width 0.3s ease;
             position: relative;
@@ -208,21 +314,23 @@
             text-align: center;
             font-weight: bold;
             margin-bottom: 5px;
-            color: #333;
+            color: var(--text-color);
+            transition: color 0.3s;
         }
         
         .user-info {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            background-color: #e6f7ff;
+            background-color: var(--user-info-bg);
             padding: 10px 15px;
             border-radius: 4px;
             margin-bottom: 15px;
-            border: 1px solid #91d5ff;
+            border: 1px solid var(--user-info-border);
+            transition: background-color 0.3s, border-color 0.3s;
         }
-        .user-name { font-weight: bold; color: #1890ff; }
-        .session-time { font-size: 12px; color: #ff4d4f; font-weight: bold; }
+        .user-name { font-weight: bold; color: var(--user-name-color); }
+        .session-time { font-size: 12px; color: var(--session-time-color); font-weight: bold; }
         
         .badge {
             display: inline-block;
@@ -232,10 +340,10 @@
             color: #fff;
             margin-left: 5px;
         }
-        .badge-success { background-color: #52c41a; }
-        .badge-fail { background-color: #ff4d4f; }
-        .badge-info { background-color: #1890ff; }
-        .badge-warning { background-color: #ff9800; }
+        .badge-success { background-color: var(--badge-success); }
+        .badge-fail { background-color: var(--badge-fail); }
+        .badge-info { background-color: var(--badge-info); }
+        .badge-warning { background-color: var(--badge-warning); }
         
         .action-bar {
             display: flex;
@@ -254,14 +362,15 @@
             align-items: center;
         }
         .modal-content {
-            background-color: #fff;
+            background-color: var(--modal-bg);
             padding: 20px;
             border-radius: 8px;
             width: 90%;
             max-width: 500px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            transition: background-color 0.3s;
         }
-        .modal-title { font-size: 18px; font-weight: bold; margin-bottom: 15px; }
+        .modal-title { font-size: 18px; font-weight: bold; margin-bottom: 15px; color: var(--text-color); transition: color 0.3s; }
         .modal-buttons { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
         
         .loading-spin {
@@ -278,13 +387,14 @@
         @keyframes spin { to { transform: rotate(360deg); } }
         
         .tips {
-            background-color: #fffbe6;
-            border: 1px solid #ffe58f;
+            background-color: var(--tips-bg);
+            border: 1px solid var(--tips-border);
             padding: 10px 15px;
             border-radius: 4px;
             margin-bottom: 15px;
             font-size: 13px;
-            color: #614d0c;
+            color: var(--tips-color);
+            transition: background-color 0.3s, border-color 0.3s, color 0.3s;
         }
         .entry-buttons {
             display: flex;
@@ -294,14 +404,15 @@
         }
         .code-type {
             font-size: 11px;
-            color: #888;
+            color: var(--text-secondary);
+            transition: color 0.3s;
         }
         .code-info {
             display: flex;
             flex-direction: column;
         }
         .limited-tag {
-            background-color: #ff9800;
+            background-color: var(--badge-warning);
             color: white;
             font-size: 10px;
             padding: 2px 6px;
@@ -310,18 +421,48 @@
             display: inline-block;
         }
         .cooldown-info {
-            background-color: #fff3e0;
-            border: 1px solid #ffb74d;
+            background-color: var(--cooldown-bg);
+            border: 1px solid var(--cooldown-border);
             padding: 8px 12px;
             border-radius: 6px;
             margin-bottom: 15px;
             font-size: 13px;
-            color: #e65100;
+            color: var(--cooldown-color);
             display: none;
+            transition: background-color 0.3s, border-color 0.3s, color 0.3s;
         }
         .cooldown-timer {
             font-weight: bold;
-            color: #d32f2f;
+            color: var(--cooldown-timer);
+        }
+        
+        .theme-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            z-index: 999;
+        }
+        
+        .theme-toggle:hover {
+            transform: scale(1.1);
+        }
+        
+        @media (max-width: 768px) {
+            .theme-toggle {
+                top: 10px;
+                right: 10px;
+            }
         }
         @media (max-width: 768px) {
             header {
@@ -336,6 +477,7 @@
 </head>
 <body>
 
+<div class="theme-toggle" id="theme-toggle" title="切换主题">🌙</div>
 <div class="container">
     <header>
         <div class="header-logo">
@@ -380,6 +522,10 @@
                     <div>欢迎你，<span class="user-name" id="display-username">加载中...</span></div>
                     <div class="session-time" id="session-timer">15:00:00</div>
                 </div>
+                <div class="tips" id="auth-code-section" style="display: none; background-color: #f6ffed; border: 1px solid #b7eb8f; color: #52c41a;">
+                    <strong>授权码：</strong><span id="auth-code" style="font-size: 18px; font-weight: bold; margin: 0 10px;">----</span>
+                    <span style="font-size: 12px; color: #666;">（会话期间首次批量领取需要使用此授权码）</span>
+                </div>
                 <div class="form-group">
                     <label for="server-select">选择区服</label>
                     <select id="server-select" onchange="handleServerChange()">
@@ -408,8 +554,10 @@
             </div>
             <div class="action-bar">
                 <button class="btn btn-success" id="start-btn" onclick="startRedeemAll()" disabled>一键领取全部</button>
+                <button class="btn btn-success" id="start-selected-btn" onclick="startRedeemSelected()" disabled>选择领取</button>
                 <button class="btn btn-danger" id="stop-btn" onclick="stopRedeem()" style="display: none;">停止领取</button>
                 <button class="btn" id="reset-btn" onclick="resetList()" style="background-color: #8c8c8c; color: white;">重置列表状态</button>
+                <button class="btn" id="select-all-btn" onclick="toggleSelectAll()" style="background-color: #555; color: white;">全选</button>
             </div>
             
             <div class="progress-text" id="progress-text" style="display: none;">准备中 0/0</div>
@@ -457,7 +605,9 @@
         account: '',
         sid: '',
         roleName: '',
-        uid: ''
+        uid: '',
+        authCode: '',
+        authCodeUsed: false
     };
     
     let codes = [];
@@ -468,6 +618,27 @@
     let logRefreshInterval = null;
     let cooldownTimer = null;
     let currentCooldownSeconds = 0;
+
+    // 主题切换功能
+    function initTheme() {
+        const savedTheme = localStorage.getItem('theme') || 'light';
+        document.body.setAttribute('data-theme', savedTheme === 'dark' ? 'dark' : 'light');
+        updateThemeIcon();
+    }
+
+    function toggleTheme() {
+        const currentTheme = document.body.getAttribute('data-theme') || 'light';
+        const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+        document.body.setAttribute('data-theme', newTheme);
+        localStorage.setItem('theme', newTheme);
+        updateThemeIcon();
+    }
+
+    function updateThemeIcon() {
+        const themeToggle = document.getElementById('theme-toggle');
+        const currentTheme = document.body.getAttribute('data-theme') || 'light';
+        themeToggle.textContent = currentTheme === 'light' ? '🌙' : '☀️';
+    }
 
     function showAlert(message, title = '提示') {
         document.getElementById('alert-title').textContent = title;
@@ -553,6 +724,8 @@
                 userData.account = data.data.account;
                 userData.username = data.data.username;
                 userData.token = data.data.token;
+                userData.authCode = data.data.authCode || '';
+                userData.authCodeUsed = data.data.authCodeUsed || false;
                 
                 document.getElementById('login-form').style.display = 'none';
                 document.getElementById('user-display').style.display = 'block';
@@ -560,12 +733,25 @@
                 document.getElementById('logout-btn').disabled = false;
                 document.getElementById('refresh-role-btn').disabled = false;
                 
+                // 显示授权码
+                if (userData.authCode) {
+                    document.getElementById('auth-code-section').style.display = 'block';
+                    document.getElementById('auth-code').textContent = userData.authCode;
+                }
+                
                 await loadCodes();
                 await loadServers();
                 await checkCooldown();
                 
                 const expiresAt = data.data.expiresAt;
                 startSessionTimer(expiresAt);
+                
+                // 更新领取按钮状态
+                const hasWaitItems = codes.some(c => c.status === 'wait');
+                if (hasWaitItems) {
+                    document.getElementById('start-btn').disabled = false;
+                    document.getElementById('start-selected-btn').disabled = true;
+                }
                 
                 return true;
             }
@@ -645,7 +831,7 @@
     function renderCodes() {
         const container = document.getElementById('code-list-container');
         if (codes.length === 0) {
-            container.innerHTML = '<div style="padding: 20px; text-align: center; color: #999;">暂无CDK</div>';
+            container.innerHTML = '<div style="padding: 20px; text-align: center; color: var(--text-secondary);">暂无CDK</div>';
             return;
         }
 
@@ -673,17 +859,21 @@
             const limitedHtml = isLimited ? '<span class="limited-tag">限时</span>' : '';
 
             div.innerHTML = `
-                <div class="code-info">
-                    <div>
-                        <span class="code-key">${item.key}</span>${limitedHtml}
+                <div style="display: flex; align-items: flex-start; gap: 10px; width: 100%;">
+                    <input type="checkbox" class="code-checkbox" id="code-checkbox-${index}" data-index="${index}" ${item.status === 'wait' ? '' : 'disabled'} onchange="updateSelectedCount()" style="margin-top: 5px;">
+                    <div class="code-info" style="flex: 1;">
+                        <div>
+                            <span class="code-key">${item.key}</span>${limitedHtml}
+                        </div>
+                        <div class="code-type">CDK兑换码</div>
+                        <div style="font-size: 12px; color: var(--text-secondary);" id="code-result-${index}">${item.result || ''}</div>
                     </div>
-                    <div class="code-type" style="font-size: 11px; color: #aaa;">CDK兑换码</div>
-                    <div style="font-size: 12px; color: #666;" id="code-result-${index}">${item.result || ''}</div>
+                    <span class="code-status ${statusClass}" id="code-status-${index}">${statusText}</span>
                 </div>
-                <span class="code-status ${statusClass}" id="code-status-${index}">${statusText}</span>
             `;
             container.appendChild(div);
         });
+        updateSelectedCount();
     }
 
     function updateBadges() {
@@ -693,6 +883,185 @@
         
         document.getElementById('success-badge').textContent = `成功: ${success}`;
         document.getElementById('fail-badge').textContent = `失败: ${fail}`;
+    }
+
+    function updateSelectedCount() {
+        const checkboxes = document.querySelectorAll('.code-checkbox:checked');
+        const selectedCount = checkboxes.length;
+        const startSelectedBtn = document.getElementById('start-selected-btn');
+        startSelectedBtn.disabled = selectedCount === 0 || !userData.uid;
+    }
+
+    function toggleSelectAll() {
+        const checkboxes = document.querySelectorAll('.code-checkbox:not(:disabled)');
+        const selectAllBtn = document.getElementById('select-all-btn');
+        const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+        
+        checkboxes.forEach(cb => {
+            cb.checked = !allChecked;
+        });
+        
+        selectAllBtn.textContent = allChecked ? '全选' : '取消全选';
+        updateSelectedCount();
+    }
+
+    async function startRedeemSelected() {
+        if (!userData.token || !userData.sid || !userData.uid) {
+            showAlert('请先登录并选择区服获取角色信息');
+            return;
+        }
+        
+        const canRedeem = await checkCooldown();
+        if (!canRedeem) {
+            showAlert('CDK领取冷却中，请等待冷却结束后再试', '提示');
+            return;
+        }
+        
+        // 首次批量领取需要授权码验证
+        if (!userData.authCodeUsed && userData.authCode) {
+            const authCodeInput = prompt('请输入授权码进行验证：', '');
+            if (!authCodeInput || authCodeInput !== userData.authCode) {
+                showAlert('授权码错误，请重新输入', '验证失败');
+                return;
+            }
+            
+            // 验证授权码
+            try {
+                const response = await fetch('/api/verify-auth-code', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ authCode: authCodeInput }),
+                    credentials: 'include'
+                });
+                
+                const data = await response.json();
+                if (data.code !== 200 || !data.valid) {
+                    showAlert('授权码验证失败，请重新登录获取新的授权码', '验证失败');
+                    return;
+                }
+                
+                userData.authCodeUsed = true;
+                showAlert('授权码验证成功，开始批量领取', '验证成功');
+            } catch (error) {
+                showAlert('授权码验证失败，请检查网络连接', '错误');
+                return;
+            }
+        }
+        
+        const checkboxes = document.querySelectorAll('.code-checkbox:checked');
+        const itemsToProcess = [];
+        
+        checkboxes.forEach(cb => {
+            const index = parseInt(cb.dataset.index);
+            if (codes[index].status === 'wait') {
+                itemsToProcess.push({ index: index, item: codes[index] });
+            }
+        });
+        
+        if (itemsToProcess.length === 0) {
+            showAlert('没有选中等待领取的CDK');
+            return;
+        }
+
+        isRunning = true;
+        stopRequested = false;
+        
+        document.getElementById('start-btn').style.display = 'none';
+        document.getElementById('start-selected-btn').style.display = 'none';
+        document.getElementById('stop-btn').style.display = 'inline-block';
+        document.getElementById('reset-btn').disabled = true;
+        document.getElementById('select-all-btn').disabled = true;
+        document.getElementById('server-select').disabled = true;
+        document.getElementById('logout-btn').disabled = true;
+        document.getElementById('refresh-role-btn').disabled = true;
+        
+        document.getElementById('progress-bar-container').style.display = 'block';
+        document.getElementById('progress-text').style.display = 'block';
+
+        await fetch('/api/progress/start', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ total: itemsToProcess.length })
+        });
+
+        await loadLogs();
+
+        let successCount = codes.filter(c => c.status === 'success').length;
+        let failCount = codes.filter(c => c.status === 'fail').length;
+        let processedCount = 0;
+        let hasCooldownError = false;
+
+        for (const item of itemsToProcess) {
+            if (stopRequested) {
+                await fetch('/api/progress/stop', { method: 'POST' });
+                break;
+            }
+            
+            const index = item.index;
+            const codeItem = item.item;
+            
+            processedCount++;
+            updateItemStatus(index, 'running', '领取中...');
+            
+            await fetch('/api/progress/update', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ current: processedCount })
+            });
+
+            const result = await redeemSingleCDK(index, codeItem.key);
+            
+            if (result.cooldown) {
+                hasCooldownError = true;
+                showAlert(result.msg, '冷却中');
+                break;
+            }
+            
+            if (result.success) {
+                codes[index].status = 'success';
+                codes[index].result = result.msg;
+                successCount++;
+            } else {
+                codes[index].status = 'fail';
+                codes[index].result = result.msg;
+                failCount++;
+            }
+            
+            await fetch('/api/progress/update', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ success: successCount, fail: failCount })
+            });
+
+            updateItemStatus(index, codes[index].status, codes[index].result);
+            updateBadges();
+            updateProgressBar(processedCount, itemsToProcess.length);
+            
+            await new Promise(resolve => setTimeout(resolve, 800));
+        }
+
+        isRunning = false;
+        document.getElementById('start-btn').style.display = 'inline-block';
+        document.getElementById('start-selected-btn').style.display = 'inline-block';
+        document.getElementById('stop-btn').style.display = 'none';
+        document.getElementById('reset-btn').disabled = false;
+        document.getElementById('select-all-btn').disabled = false;
+        document.getElementById('server-select').disabled = false;
+        document.getElementById('logout-btn').disabled = false;
+        document.getElementById('refresh-role-btn').disabled = false;
+        
+        await fetch('/api/progress/stop', { method: 'POST' });
+        
+        if (hasCooldownError) {
+            await checkCooldown();
+        } else if (stopRequested) {
+            showAlert('批量领取已手动停止', '提示');
+        } else {
+            showAlert('选中的CDK已处理完毕！', '完成');
+            await checkCooldown();
+        }
+        
+        await loadLogs();
     }
 
     async function handleLogin() {
@@ -730,12 +1099,20 @@
                 userData.token = data.data.token;
                 userData.username = data.data.username;
                 userData.account = account;
+                userData.authCode = data.data.authCode || '';
+                userData.authCodeUsed = data.data.authCodeUsed || false;
                 
                 document.getElementById('login-form').style.display = 'none';
                 document.getElementById('user-display').style.display = 'block';
                 document.getElementById('display-username').textContent = userData.username || userData.account;
                 document.getElementById('logout-btn').disabled = false;
                 document.getElementById('refresh-role-btn').disabled = false;
+                
+                // 显示授权码
+                if (userData.authCode) {
+                    document.getElementById('auth-code-section').style.display = 'block';
+                    document.getElementById('auth-code').textContent = userData.authCode;
+                }
                 
                 await loadCodes();
                 await loadServers();
@@ -891,6 +1268,37 @@
         if (!canRedeem) {
             showAlert('CDK领取冷却中，请等待冷却结束后再试', '提示');
             return;
+        }
+        
+        // 首次批量领取需要授权码验证
+        if (!userData.authCodeUsed && userData.authCode) {
+            const authCodeInput = prompt('请输入授权码进行验证：', '');
+            if (!authCodeInput || authCodeInput !== userData.authCode) {
+                showAlert('授权码错误，请重新输入', '验证失败');
+                return;
+            }
+            
+            // 验证授权码
+            try {
+                const response = await fetch('/api/verify-auth-code', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ authCode: authCodeInput }),
+                    credentials: 'include'
+                });
+                
+                const data = await response.json();
+                if (data.code !== 200 || !data.valid) {
+                    showAlert('授权码验证失败，请重新登录获取新的授权码', '验证失败');
+                    return;
+                }
+                
+                userData.authCodeUsed = true;
+                showAlert('授权码验证成功，开始批量领取', '验证成功');
+            } catch (error) {
+                showAlert('授权码验证失败，请检查网络连接', '错误');
+                return;
+            }
         }
         
         const itemsToProcess = [];
@@ -1080,9 +1488,13 @@
         stopBtn.textContent = '停止领取';
         stopBtn.disabled = false;
         
+        const selectAllBtn = document.getElementById('select-all-btn');
+        selectAllBtn.textContent = '全选';
+        
         const hasWaitItems = codes.some(c => c.status === 'wait');
         if (hasWaitItems && userData.uid) {
             document.getElementById('start-btn').disabled = false;
+            document.getElementById('start-selected-btn').disabled = true;
         }
     }
 
@@ -1132,6 +1544,10 @@
     }
 
     document.addEventListener('DOMContentLoaded', async function() {
+        // 初始化主题
+        initTheme();
+        document.getElementById('theme-toggle').addEventListener('click', toggleTheme);
+        
         await loadImage();
         await loadServers();
         
