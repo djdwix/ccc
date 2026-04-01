@@ -26,6 +26,29 @@
             margin: 0 auto;
         }
 
+        .banner {
+            width: 100%;
+            margin-bottom: 20px;
+            border-radius: 24px;
+            overflow: hidden;
+            background: rgba(18, 25, 45, 0.4);
+            backdrop-filter: blur(4px);
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .banner:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px -8px rgba(0,0,0,0.4);
+        }
+        
+        .banner img {
+            width: 100%;
+            height: auto;
+            display: block;
+            border-radius: 24px;
+        }
+
         .header {
             display: flex;
             justify-content: space-between;
@@ -420,6 +443,11 @@
     <div class="cdk-return">
         <a href="/" target="_blank">← 返回CDK领取工具</a>
     </div>
+    
+    <div class="banner" id="bannerContainer" style="display: none;">
+        <img id="bannerImage" src="" alt="累充豪礼活动">
+    </div>
+    
     <div class="header">
         <div class="logo">
             <h1><i class="fas fa-trophy"></i> 累充豪礼</h1>
@@ -533,6 +561,23 @@
         } catch (e) {
             console.error('API请求失败:', e);
             throw e;
+        }
+    }
+
+    async function loadBanner() {
+        try {
+            const imgElement = document.getElementById('bannerImage');
+            const container = document.getElementById('bannerContainer');
+            const response = await fetch('/api/image/LCHL.png');
+            if (response.ok) {
+                imgElement.src = '/api/image/LCHL.png';
+                container.style.display = 'block';
+            } else {
+                container.style.display = 'none';
+            }
+        } catch (error) {
+            console.error('加载横幅失败', error);
+            document.getElementById('bannerContainer').style.display = 'none';
         }
     }
 
@@ -771,6 +816,10 @@
     }
 
     function openAccumulateModal(pack) {
+        if (pack.claimed) {
+            showToast('该礼包已领取过', true);
+            return;
+        }
         currentSelectedPack = pack;
         const modal = document.getElementById('accumulateModal');
         const modalIcon = document.getElementById('accumulateModalIcon');
@@ -851,6 +900,18 @@
 
     document.getElementById('confirmClaimBtn')?.addEventListener('click', async () => {
         if (!currentSelectedPack) return;
+        if (currentSelectedPack.claimed) {
+            showToast('该礼包已领取过', true);
+            document.getElementById('accumulateModal').style.display = 'none';
+            currentSelectedPack = null;
+            return;
+        }
+        if (userTotalPay < currentSelectedPack.needpay) {
+            showToast(`累计充值不足，需要累计充值${currentSelectedPack.needpay}元，当前累计充值${userTotalPay}元`, true);
+            document.getElementById('accumulateModal').style.display = 'none';
+            currentSelectedPack = null;
+            return;
+        }
         document.getElementById('accumulateModal').style.display = 'none';
         await performClaimPack(currentSelectedPack);
         currentSelectedPack = null;
@@ -910,6 +971,7 @@
     updateSearchHint();
 
     async function init() {
+        await loadBanner();
         await verifyOrLogin();
     }
 

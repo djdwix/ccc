@@ -910,11 +910,24 @@ async def handle_redeem_accumulate(request):
                     pack = json.loads(value)
                 else:
                     pack = value
-                if isinstance(pack, dict) and (str(pack.get('id')) == str(pack_id) or str(key) == str(pack_id)):
-                    target_pack = pack
-                    need_pay = int(pack.get('needpay', 0)) if pack.get('needpay') else 0
-                    rewards_list = pack.get('rewards')
-                    break
+                if isinstance(pack, dict):
+                    pack_id_str = str(pack.get('id')) if pack.get('id') is not None else str(key)
+                    if pack_id_str == str(pack_id):
+                        target_pack = pack
+                        need_pay = int(pack.get('needpay', 0)) if pack.get('needpay') else 0
+                        rewards = pack.get('rewards')
+                        if isinstance(rewards, str):
+                            try:
+                                rewards = json.loads(rewards)
+                            except:
+                                rewards = []
+                        elif not isinstance(rewards, list):
+                            if rewards is not None:
+                                rewards = [rewards] if isinstance(rewards, (int, str)) else []
+                            else:
+                                rewards = []
+                        rewards_list = rewards
+                        break
             except:
                 pass
         
@@ -926,22 +939,27 @@ async def handle_redeem_accumulate(request):
         
         claimed = load_claimed_packs()
         account = profile_data.get('data', {}).get('account', '')
+        if not account:
+            return web.json_response({'code': 400, 'msg': '无法获取账号信息'})
+        
         claim_key = f"{account}_{sid}_{pack_id}"
         
         if claimed.get(claim_key, False):
             return web.json_response({'code': 400, 'msg': '该礼包已领取过'})
         
-        if rewards_list and isinstance(rewards_list, list):
+        if rewards_list and isinstance(rewards_list, list) and len(rewards_list) > 0:
             success_all = True
             async with aiohttp.ClientSession() as session:
                 for reward in rewards_list:
                     item_id = reward.get('item')
-                    if item_id:
-                        async with session.get(f"{API_BASE}/?do=getGiftRewards", headers={'Authorization': token}, params={'sid': sid, 'packid': item_id}) as resp:
-                            reward_result = await safe_json_response(resp)
-                        if reward_result.get('code') != 200:
-                            success_all = False
-                            add_log_entry(f"累充礼包{pack_id}领取奖励{item_id}失败: {reward_result.get('msg', '未知错误')}")
+                    if not item_id:
+                        continue
+                    async with session.get(f"{API_BASE}/?do=getGiftRewards", headers={'Authorization': token}, params={'sid': sid, 'packid': item_id}) as resp:
+                        reward_result = await safe_json_response(resp)
+                    if reward_result.get('code') != 200:
+                        success_all = False
+                        add_log_entry(f"累充礼包{pack_id}领取奖励{item_id}失败: {reward_result.get('msg', '未知错误')}")
+                        break
             if not success_all:
                 return web.json_response({'code': 500, 'msg': '部分奖励领取失败，请重试'})
         elif rewards_list:
@@ -1000,9 +1018,22 @@ async def handle_accumulate_packs(request):
                         if pack_id is None:
                             pack_id = int(key) if key.isdigit() else key
                         pack['id'] = pack_id
+                        
+                        rewards = pack.get('rewards')
+                        if isinstance(rewards, str):
+                            try:
+                                rewards = json.loads(rewards)
+                            except:
+                                rewards = []
+                        elif not isinstance(rewards, list):
+                            if rewards is not None:
+                                rewards = [rewards] if isinstance(rewards, (int, str)) else []
+                            else:
+                                rewards = []
+                        pack['rewards'] = rewards
+                        
                         accumulate_packs.append(pack)
-                except Exception as e:
-                    add_log_entry(f"解析礼包数据异常: {str(e)}")
+                except Exception:
                     pass
         
         accumulate_packs.sort(key=lambda x: int(x.get('needpay', 0)) if x.get('needpay') else 0)
@@ -1015,13 +1046,8 @@ async def handle_accumulate_packs(request):
             claim_key = f"{account}_{sid}_{pack_id}"
             pack_needpay = int(pack.get('needpay', 0)) if pack.get('needpay') else 0
             
-            rewards = pack.get('rewards')
-            if isinstance(rewards, str):
-                try:
-                    rewards = json.loads(rewards)
-                except:
-                    rewards = []
-            elif not isinstance(rewards, list):
+            rewards = pack.get('rewards', [])
+            if not isinstance(rewards, list):
                 rewards = []
             
             result_packs.append({
